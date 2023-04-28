@@ -117,7 +117,7 @@ def max_subseq(n, t):
     """
     "*** YOUR CODE HERE ***"
     # 别人伯克利的大一编程就这么难了，我大一的时候在干什么？？？
-
+    # November Rain
 
 
 def add_chars(w1, w2):
