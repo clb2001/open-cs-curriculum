@@ -72,6 +72,8 @@ def naiveSoftmaxLossAndGradient(
     ### This numerically stable implementation helps you avoid issues pertaining
     ### to integer overflow. 
 
+    # @是一个装饰器，针对函数，起调用传参的作用
+    # 但是这里表示的是矩阵的乘法
     softmax_array = outsideVectors @ centerWordVec
     pre = softmax(softmax_array)
     loss = -np.log(pre[outsideWordIdx])
@@ -125,7 +127,16 @@ def negSamplingLossAndGradient(
     ### YOUR CODE HERE (~10 Lines)
 
     ### Please use your implementation of sigmoid in here.
-    # sigmoid_negative_sample_dot_with_Vc = 
+    sigmoid_negative_sample_dot_with_Vc = sigmoid(outsideVectors[negSampleWordIndices])
+    sigmoid_Vo_dot_with_Vc = sigmoid(outsideVectors[outsideWordIdx]@centerWordVec)
+    loss = -np.log(sigmoid_Vo_dot_with_Vc) - np.sum(np.log(1-sigmoid_negative_sample_dot_with_Vc))
+    gradCenterVec = sigmoid_Vo_dot_with_Vc * outsideVectors[outsideWordIdx] \
+                    + np.sum(sigmoid_negative_sample_dot_with_Vc.reshape(-1,1))
+    # np.zeros_like(a)的目的是构建一个与a同维度的数组，并初始化所有变量为零
+    gradOutsideVecs = np.zeros_like(outsideVectors)
+    gradOutsideVecs[outsideWordIdx] = (sigmoid_Vo_dot_with_Vc) * centerWordVec
+    for i, j in enumerate(negSampleWordIndices):
+        gradOutsideVecs[j] += sigmoid_negative_sample_dot_with_Vc[i] * centerWordVec
     ### END YOUR CODE
 
     return loss, gradCenterVec, gradOutsideVecs
@@ -171,7 +182,14 @@ def skipgram(currentCenterWord, windowSize, outsideWords, word2Ind,
     gradOutsideVectors = np.zeros(outsideVectors.shape)
 
     ### YOUR CODE HERE (~8 Lines)
-
+    centerWordIndex = word2Ind[currentCenterWord]
+    centerWordVector = centerWordVectors[centerWordIndex]
+    for outsideword in outsideWords:
+        outsidewordIndex = word2Ind[outsideword]
+        now_loss, now_c_grad, now_o_grad = word2vecLossAndGradient(centerWordVector, centerWordIndex, outsideVectors, dataset)
+        loss += now_loss
+        gradCenterVecs[centerWordIndex] += now_c_grad
+        gradOutsideVectors += now_o_grad
     ### END YOUR CODE
     
     return loss, gradCenterVecs, gradOutsideVectors
