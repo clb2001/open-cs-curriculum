@@ -18,7 +18,14 @@ def sigmoid(x):
     """
 
     ### YOUR CODE HERE (~1 Line)
-
+    if (isinstance(x, np.ndarray)):
+        s = np.zeros_like(x, dtype = float)
+        positive_mask = (x >= 0)
+        negative_mask = (x < 0)
+        s[positive_mask] = 1 / (1 + (np.exp(-x[positive_mask])))
+        s[negative_mask] = np.exp(x[negative_mask]) / (1 + (np.exp(x[negative_mask])))
+    else:
+        s = 1 / (1 + np.exp(-x))
     ### END YOUR CODE
 
     return s
@@ -65,6 +72,13 @@ def naiveSoftmaxLossAndGradient(
     ### This numerically stable implementation helps you avoid issues pertaining
     ### to integer overflow. 
 
+    softmax_array = outsideVectors @ centerWordVec
+    pre = softmax(softmax_array)
+    loss = -np.log(pre[outsideWordIdx])
+    pre_minus_y = pre
+    pre_minus_y[outsideWordIdx] -= 1
+    gradCenterVec = outsideVectors.T @ pre_minus_y
+    gradOutsideVecs = centerWordVec * pre_minus_y.reshape(-1, 1)
     ### END YOUR CODE
 
     return loss, gradCenterVec, gradOutsideVecs
@@ -111,7 +125,7 @@ def negSamplingLossAndGradient(
     ### YOUR CODE HERE (~10 Lines)
 
     ### Please use your implementation of sigmoid in here.
-
+    # sigmoid_negative_sample_dot_with_Vc = 
     ### END YOUR CODE
 
     return loss, gradCenterVec, gradOutsideVecs
