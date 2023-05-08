@@ -23,7 +23,12 @@ def num_eights(x):
     True
     """
     "*** YOUR CODE HERE ***"
-
+    if (x == 0):
+        return 0
+    elif (x % 10 == 8):
+        return 1 + num_eights(x // 10)
+    else:
+        return num_eights(x // 10)
 
 def pingpong(n):
     """Return the nth element of the ping-pong sequence.
@@ -58,7 +63,7 @@ def pingpong(n):
     True
     """
     "*** YOUR CODE HERE ***"
-
+    
 
 def missing_digits(n):
     """Given a number a that is in sorted, increasing order,

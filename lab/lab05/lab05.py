@@ -12,6 +12,11 @@ def couple(s, t):
     """
     assert len(s) == len(t)
     "*** YOUR CODE HERE ***"
+    # res = []
+    # for i in range(0, len(s)):
+    #     res.append([s[i], t[i]])
+    # return res
+    return [[s[i], t[i]] for i in range(0, len(s))]
 
 
 from math import sqrt
@@ -27,6 +32,8 @@ def distance(city_a, city_b):
     5.0
     """
     "*** YOUR CODE HERE ***"
+    return sqrt((get_lat(city_a) - get_lat(city_b))**2 + (get_lon(city_a) - get_lon(city_b))**2)
+
 
 def closer_city(lat, lon, city_a, city_b):
     """
@@ -44,6 +51,9 @@ def closer_city(lat, lon, city_a, city_b):
     'Bucharest'
     """
     "*** YOUR CODE HERE ***"
+    a = (get_lat(city_a) - lat)**2 + (get_lon(city_a) - lon)**2
+    b = (get_lat(city_b) - lat)**2 + (get_lon(city_b) - lon)**2
+    return get_name(city_b) if a > b else get_name(city_a)
 
 def check_city_abstraction():
     """
@@ -143,7 +153,15 @@ def berry_finder(t):
     True
     """
     "*** YOUR CODE HERE ***"
-
+    if (label(t) != 'berry') & is_leaf(t):
+        return False
+    elif label(t) == 'berry':
+        return True
+    else:
+        for i in branches(t):
+            if berry_finder(i):
+                return True                  
+        return False
 
 def sprout_leaves(t, leaves):
     """Sprout new leaves containing the data in leaves at each leaf in
@@ -179,6 +197,14 @@ def sprout_leaves(t, leaves):
           2
     """
     "*** YOUR CODE HERE ***"
+    if is_leaf(t):
+        return tree(label(t), [tree(k) for k in leaves])
+    else:
+        # for i in branches(t):
+        #     i = sprout_leaves(i, leaves)
+        # return t
+        # 这里卡了我半个小时，还是看了别人的答案发现不对的地方
+        return tree(label(t), [sprout_leaves(i, leaves) for i in branches(t)])
 
 # Abstraction tests for sprout_leaves and berry_finder
 def check_abstraction():
@@ -237,7 +263,11 @@ def coords(fn, seq, lower, upper):
     [[-2, 4], [1, 1], [3, 9]]
     """
     "*** YOUR CODE HERE ***"
-    return ______
+    # 这个例子告诉我们一定要打括号
+    # a practice for functional programming
+    # return [[i, fn(i)] for i in seq if (fn(i) <= upper & fn(i) >= lower)]
+    # return [[i, fn(i)] for i in seq if (fn(i) >= lower & fn(i) <= upper)]
+    return [[i, fn(i)] for i in seq if ((fn(i) >= lower) & (fn(i) <= upper))]
 
 
 def riffle(deck):

@@ -118,7 +118,32 @@ def max_subseq(n, t):
     "*** YOUR CODE HERE ***"
     # 别人伯克利的大一编程就这么难了，我大一的时候在干什么？？？
     # November Rain
-
+    temp = []
+    arr = []
+    lens = 0
+    copy = n
+    while n > 0:
+        i = n % 10
+        n = n // 10 
+        lens += 1
+        temp.append(i)
+        arr.append(i)
+    # arr = temp # deep copy?
+    arr.reverse()
+    temp.sort(reverse=True)
+    res = []
+    if t == 0:
+        return 0
+    elif t <= lens:
+        for i in range(0, lens):
+            if arr[i] in temp[0:t]:
+                res.append(str(arr[i]))
+            if len(res) == t:
+                break
+        b = int(''.join(res))
+        return b
+    else:
+        return copy
 
 def add_chars(w1, w2):
     """
