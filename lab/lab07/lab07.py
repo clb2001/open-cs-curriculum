@@ -13,7 +13,8 @@ def naturals():
         yield i
         i += 1
 
-
+# 在迭代生成器时，每一次执行都可以保留上一次的状态，
+# 而不是像普通方法那样，遇到 return 就返回结果，下一次执行只能再次重复上一次的流程
 def scale(it, multiplier):
     """Yield elements of the iterable it scaled by a number multiplier.
 
@@ -28,7 +29,13 @@ def scale(it, multiplier):
     [2, 4, 6, 8, 10]
     """
     "*** YOUR CODE HERE ***"
-
+    # i = 0
+    # while it:
+    #     it[i] = it[i] * multiplier
+    #     yield it[i]
+    #     i += 1
+    for i in it:
+        yield i * multiplier
 
 def hailstone(n):
     """
@@ -44,4 +51,12 @@ def hailstone(n):
     1
     """
     "*** YOUR CODE HERE ***"
+    yield n
+    while (n != 1):
+        if (n % 2 == 0):
+            yield n // 2
+            n = n // 2
+        else:
+            yield 3 * n + 1
+            n = 3 * n + 1
 

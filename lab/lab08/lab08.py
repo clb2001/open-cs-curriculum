@@ -8,6 +8,12 @@ def convert_link(link):
     []
     """
     "*** YOUR CODE HERE ***"
+    # 这个链表的表示方法挺难适应
+    # Python语言的技巧性真的好高
+    if link is not Link.empty:
+        return [link.first] + convert_link(link.rest)
+    else:
+        return []
 
 
 def every_other(s):
@@ -28,7 +34,12 @@ def every_other(s):
     Link(4)
     """
     "*** YOUR CODE HERE ***"
-
+    while s is not Link.empty:
+        if (s.rest is not Link.empty):
+            s.rest = s.rest.rest
+            s = s.rest
+        else:
+            break
 
 def cumulative_mul(t):
     """Mutates t so that each node's label becomes the product of all labels in
@@ -40,7 +51,22 @@ def cumulative_mul(t):
     Tree(105, [Tree(15, [Tree(5)]), Tree(7)])
     """
     "*** YOUR CODE HERE ***"
-
+    if t.is_leaf():
+        # return t
+        t.label
+    else:
+        for i in t.branches:
+            cumulative_mul(i)
+            t.label = t.label * i.label
+        # return t
+    ################################################
+    # 提供一个直接输出的版本
+    # if t.is_leaf():
+    #     return t
+    # else:
+    #     for i in t.branches:
+    #         t.label = t.label * cumulative_mul(i).label
+    #     return t
 
 def has_cycle(link):
     """Return whether link contains a cycle.

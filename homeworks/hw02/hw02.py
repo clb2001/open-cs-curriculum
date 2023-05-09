@@ -63,7 +63,48 @@ def pingpong(n):
     True
     """
     "*** YOUR CODE HERE ***"
+    # solution 1(failed)
+    # def helper(index):
+    #     if index == n:
+    #         return 1
+    #     # elif index == 1:
+    #     #     return 0
+    #     elif num_eights(n-index) or ((n-index) % 8 == 0):
+    #         return -helper(n-index-1)
+    #     else:
+    #         return helper(n-index-1)
+
+    # if (n == 0):
+    #     return 0
+    # else:
+    #     return helper(n) + pingpong(n-1)
+
+    # index, ppn, dir = 1, 1, 1
+    # while index != n:
+    #     if helper(index):
+    #         dir = -dir
+    #     ppn += dir
+    #     index += 1  
+    # return ppn
+
+    # index = 1
+    # res = 1
+    # while index != n:
+    #     res += helper(index)
+    #     index += 1
+    # return res
     
+    # 太难了太难了，虽然做了些leetcode，但是递归还是会寄
+    # 我觉得自己没做出来的原因很大程度取决于对循环的理解出了问题
+    def helper(index, res, dir):
+        if (index == n):
+            return res
+        elif num_eights(index) or (index % 8 == 0):
+            return helper(index+1, res-dir, -dir)
+        else:
+            return helper(index+1, res+dir, dir)
+    
+    return helper(1, 1, 1) 
 
 def missing_digits(n):
     """Given a number a that is in sorted, increasing order,
@@ -93,6 +134,10 @@ def missing_digits(n):
     True
     """
     "*** YOUR CODE HERE ***"
+    if (n // 10 == 0):
+        return 0
+    else:
+        return missing_digits(n // 10) if (n % 10 == (n // 10) % 10) else ((n % 10 - (n // 10) % 10) -1 + missing_digits(n // 10))
 
 
 def next_largest_coin(coin):
@@ -129,6 +174,18 @@ def count_coins(total):
     True
     """
     "*** YOUR CODE HERE ***"
+    # 递归真是常做常新
+    # 用python写会遇到没法自由定义数组的情况，这时就要想办法解决
+    # def helper(change, now_coin):
+    #     if (change == total and now_coin == None):
+    #         return 1
+    #     elif (change > total or now_coin == None):
+    #         return 0
+    #     else:
+    #         return helper(change, next_largest_coin(now_coin)) + helper(change + now_coin, now_coin)
+    # return helper(0, 1)
+    # 参考代码完全看不懂
+    # 明天早上还是要从动态规划的视角考虑
 
 
 from operator import sub, mul
