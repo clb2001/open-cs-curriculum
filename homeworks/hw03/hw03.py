@@ -44,11 +44,13 @@ def planet(size):
     """Construct a planet of some size."""
     assert size > 0
     "*** YOUR CODE HERE ***"
+    return ['planet', size]
 
 def size(w):
     """Select the size of a planet."""
     assert is_planet(w), 'must call size on a planet'
     "*** YOUR CODE HERE ***"
+    return w[1]
 
 def is_planet(w):
     """Whether w is a planet."""
@@ -105,6 +107,12 @@ def balanced(m):
     True
     """
     "*** YOUR CODE HERE ***"
+    if is_planet(m):
+        return True
+    else:
+        return ((length(left(m)) * total_weight(end(left(m)))) == (length(right(m)) * total_weight(end(right(m))))) \
+        and balanced(end(left(m))) and balanced(end(right(m)))
+
 
 def totals_tree(m):
     """Return a tree representing the mobile with its total weight at the root.
@@ -136,6 +144,28 @@ def totals_tree(m):
     True
     """
     "*** YOUR CODE HERE ***"
+    # def helper(indent, m):
+    #     if is_planet:
+    #         print(' ' * indent + str(total_weight(m)))
+    #         return
+    #     else:
+    #         print(' ' * indent + str(total_weight(m)))
+    #         if is_arm(left(m)):
+    #             helper(indent + 1, end(left(m)))
+    #         if is_arm(right(m)):
+    #             helper(indent + 1, end(right(m))) 
+    #         return
+    # helper(0, m)
+    if is_planet(m):
+        return [total_weight(m)]
+    else:
+        A = [total_weight(m)]
+        if is_arm(left(m)):
+            A.append(totals_tree(end(left(m))))
+        if is_arm(right(m)):
+            A.append(totals_tree(end(right(m))))
+        return A
+    # purple rain? purple rain!
 
 
 def replace_leaf(t, find_value, replace_value):

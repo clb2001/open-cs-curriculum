@@ -176,16 +176,17 @@ def count_coins(total):
     "*** YOUR CODE HERE ***"
     # 递归真是常做常新
     # 用python写会遇到没法自由定义数组的情况，这时就要想办法解决
-    # def helper(change, now_coin):
-    #     if (change == total and now_coin == None):
-    #         return 1
-    #     elif (change > total or now_coin == None):
-    #         return 0
-    #     else:
-    #         return helper(change, next_largest_coin(now_coin)) + helper(change + now_coin, now_coin)
-    # return helper(0, 1)
+    def helper(change, now_coin):
+        if (change == total and now_coin == None):
+            return 1
+        elif (change > total or now_coin == None):
+            return 0
+        else:
+            return helper(change, next_largest_coin(now_coin)) + helper(change + now_coin, now_coin)
+    return helper(0, 1)
     # 参考代码完全看不懂
     # 明天早上还是要从动态规划的视角考虑
+    # 能用C++写出来其实也可以了
 
 
 from operator import sub, mul
