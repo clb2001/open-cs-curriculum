@@ -20,6 +20,17 @@ def make_bank(balance):
     """
     def bank(message, amount):
         "*** YOUR CODE HERE ***"
+        nonlocal balance
+        if message == 'withdraw':
+            if balance < amount:
+                return 'Insufficient funds'
+            balance = balance - amount
+            return balance
+        elif message == 'deposit':
+            balance = balance + amount
+            return balance
+        else:
+            return 'Invalid message'
     return bank
 
 
@@ -52,6 +63,23 @@ def make_withdraw(balance, password):
     True
     """
     "*** YOUR CODE HERE ***"
+    # arr = [] # 写在哪都行
+    def withdraw(amount, pwd):
+        nonlocal balance
+        nonlocal password
+        nonlocal arr
+        if pwd == password and (len(arr) < 3):
+            if balance < amount:
+                return 'Insufficient funds'
+            balance = balance - amount
+            return balance
+        else:
+            if len(arr) >= 3:
+                return 'Frozen account. Attempts: ' + str(arr[:3])
+            arr.append(pwd)
+            return 'Incorrect password'
+    arr = []
+    return withdraw
 
 
 def repeated(t, k):
@@ -76,6 +104,18 @@ def repeated(t, k):
     """
     assert k > 1
     "*** YOUR CODE HERE ***"
+    b = next(t)
+    a = b
+    while True:
+        count = 1
+        b = next(t)
+        while (a == b):
+            count += 1
+            if (count >= k):
+                return a
+            b = next(t)
+        a = b
+        
 
 
 def permutations(seq):
@@ -101,7 +141,32 @@ def permutations(seq):
     [['a', 'b'], ['b', 'a']]
     """
     "*** YOUR CODE HERE ***"
-
+    # 先用回溯做一下
+    # def helper(seq, length, arr, temp, visit):
+    #     if (length == len(seq)):
+    #         arr.append(temp)
+    #         return
+    #     else:
+    #         for i in range(len(seq)):
+    #             if visit[i] == 0:
+    #                 temp.append(seq[i])
+    #                 visit[i] = 1
+    #                 helper(seq, length + 1, arr, temp, visit)
+    #                 visit[i] = 0
+    #                 temp.pop()
+    #         return
+    # arr = []
+    # temp = []
+    # visit = [1 for _ in range(len(seq))]
+    # helper(seq, 0, arr, temp, visit)
+    # return arr
+    if not seq:
+        yield []
+    else:
+        for perm in permutations(seq[1:]):
+            for i in range(len(seq)):
+                yield perm[:i] + [seq[0]] + perm[i:]
+    # 用python写真的好方便，是自己想象不到的那种方便
 
 def make_joint(withdraw, old_pass, new_pass):
     """Return a password-protected withdraw function that has joint access to

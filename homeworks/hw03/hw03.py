@@ -198,6 +198,19 @@ def replace_leaf(t, find_value, replace_value):
     True
     """
     "*** YOUR CODE HERE ***"
+    # 浅拷贝：arr.copy()
+    # 深拷贝：arr.deepcopy()
+    # if is_leaf(t):
+    #     if (label(t) == find_value):
+    #         t[0] = replace_value
+    #     return t
+    # 注意为什么这么写就实现了浅拷贝
+    if is_leaf(t) and (label(t) == find_value):
+        return tree(replace_value)
+    else:
+        # for branch in branches(t):
+        #     replace_leaf(branch, find_value, replace_value)
+        return tree(label(t), [replace_leaf(b, find_value, replace_value) for b in branches(t)])
 
 
 def preorder(t):
@@ -211,7 +224,25 @@ def preorder(t):
     [2, 4, 6]
     """
     "*** YOUR CODE HERE ***"
-
+    def helper(t, A):
+        if is_leaf(t):
+            A.append(label(t))
+        else:
+            A.append(label(t))
+            for i in branches(t):
+                helper(i, A)          
+    A = []
+    helper(t, A)
+    return A
+    # if is_leaf(t):
+    #     return [label(t)]
+    # else:
+    #     A = [label(t)]
+    #     for i in branches(t):
+    #         A.append(label(i))
+    #     return A
+        # [1, [2], [3, [4], [5]], [6, [7]]]
+        # return [label(t)] + [preorder(k) for k in branches(t)]
 
 def has_path(t, word):
     """Return whether there is a path in a tree where the entries along the path
@@ -243,6 +274,20 @@ def has_path(t, word):
     """
     assert len(word) > 0, 'no path for empty word.'
     "*** YOUR CODE HERE ***"
+    def helper(t, index, word):
+        if index < len(word):
+            flag = False
+            if is_leaf(t):
+                return (label(t) == word[index])
+            else:
+                for i in branches(t):
+                    if helper(i, index + 1, word):
+                        flag = True
+                        break
+                return (flag and (label(t) == word[index]))
+        else:
+            return True
+    return helper(t, 0, word)
 
 
 def interval(a, b):
@@ -252,10 +297,13 @@ def interval(a, b):
 def lower_bound(x):
     """Return the lower bound of interval x."""
     "*** YOUR CODE HERE ***"
+    return interval[0]
 
 def upper_bound(x):
     """Return the upper bound of interval x."""
     "*** YOUR CODE HERE ***"
+    return interval[1]
+
 def str_interval(x):
     """Return a string representation of interval x.
     """
@@ -267,6 +315,7 @@ def add_interval(x, y):
     lower = lower_bound(x) + lower_bound(y)
     upper = upper_bound(x) + upper_bound(y)
     return interval(lower, upper)
+
 def mul_interval(x, y):
     """Return the interval that contains the product of any value in x and any
     value in y."""
@@ -281,6 +330,7 @@ def sub_interval(x, y):
     """Return the interval that contains the difference between any value in x
     and any value in y."""
     "*** YOUR CODE HERE ***"
+    return interval(x, interval(-upper_bound(y), -lower_bound(y)))
 
 
 def div_interval(x, y):
@@ -288,6 +338,7 @@ def div_interval(x, y):
     any value in y. Division is implemented as the multiplication of x by the
     reciprocal of y."""
     "*** YOUR CODE HERE ***"
+    assert not (upper_bound(y) * lower_bound(y) <= 0)
     reciprocal_y = interval(1/upper_bound(y), 1/lower_bound(y))
     return mul_interval(x, reciprocal_y)
 
@@ -300,6 +351,7 @@ def par2(r1, r2):
     rep_r1 = div_interval(one, r1)
     rep_r2 = div_interval(one, r2)
     return div_interval(one, add_interval(rep_r1, rep_r2))
+
 def check_par():
     """Return two intervals that give different results for parallel resistors.
 
@@ -309,13 +361,16 @@ def check_par():
     >>> lower_bound(x) != lower_bound(y) or upper_bound(x) != upper_bound(y)
     True
     """
-    r1 = interval(1, 1) # Replace this line!
-    r2 = interval(1, 1) # Replace this line!
+    r1 = interval(1, 2) # Replace this line!
+    r2 = interval(3, 4) # Replace this line!
     return r1, r2
 
-
 def multiple_references_explanation():
-    return """The multiple reference problem..."""
+    return """The multiple reference problem exists.  The true value
+    within a particular interval is fixed (though unknown).  Nested
+    combinations that refer to the same interval twice may assume two different
+    true values for the same interval, which is an error that results in
+    intervals that are larger than they should be."""
 
 
 def quadratic(x, a, b, c):
@@ -328,8 +383,17 @@ def quadratic(x, a, b, c):
     '0 to 10'
     """
     "*** YOUR CODE HERE ***"
+    # f_left = a*((lower_bound(x))**2) + b*lower_bound(x) + c
+    # f_right = a*((upper_bound(x))**2) + b*upper_bound(x) + c
+    # MIN = min((c-(b**2)/(4*a)), f_right, f_left)
+    # MAX = max((c-(b**2)/(4*a)), f_right, f_left)
+    # return interval(MIN, MAX)
 
-
+    # 还可以这么写：
+    extreme = c-(b**2)/(4*a)
+    f = lambda x: a * x * x + b * x + c
+    l, u ,e = map(f, (lower_bound(x), upper_bound(x), extreme))
+    return interval(min(l, u, e), max(l, u, e))
 
 # Tree ADT
 

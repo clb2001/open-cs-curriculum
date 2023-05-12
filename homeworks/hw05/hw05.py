@@ -36,6 +36,41 @@ class VendingMachine:
     'Here is your soda.'
     """
     "*** YOUR CODE HERE ***"
+    def __init__(self, product, price, stock = 0, fund = 0):
+        self.product = product
+        self.price = price
+        self.stock = stock
+        self.fund = fund
+    
+    def vend(self):
+        if self.stock == 0:
+            return 'Inventory empty. Restocking required.'
+        else:
+            if (self.fund < self.price):
+                return 'You must add ${0} more funds.'.format(self.price - self.fund)
+            else:
+                if self.fund > self.price:
+                    res = self.fund -self.price
+                    self.fund = 0
+                    self.stock -= 1
+                    return 'Here is your {0} and ${1} change.'.format(self.product, res)
+                else:
+                    self.fund = 0
+                    self.stock -= 1
+                    return 'Here is your {0}.'.format(self.product)
+    
+    def add_funds(self, fund):
+        if self.stock == 0:
+            return 'Inventory empty. Restocking required. Here is your ${0}.'.format(fund)
+        else:
+            self.fund += fund
+            return 'Current balance: ${0}'.format(self.fund)
+    
+    def restock(self, stock):
+        self.stock += stock
+        return  'Current {0} stock: {1}'.format(self.product, self.stock)
+    
+
 
 
 class Mint:
@@ -74,9 +109,11 @@ class Mint:
 
     def create(self, kind):
         "*** YOUR CODE HERE ***"
+        return kind(self.year)          
 
     def update(self):
         "*** YOUR CODE HERE ***"
+        self.year = self.current_year
 
 class Coin:
     def __init__(self, year):
@@ -84,6 +121,11 @@ class Coin:
 
     def worth(self):
         "*** YOUR CODE HERE ***"
+        # 通过这一题对OOP有了更加深刻的理解
+        if Mint.current_year - self.year >= 50:
+            return self.cents + Mint.current_year - self.year - 50
+        else:
+            return self.cents
 
 class Nickel(Coin):
     cents = 5
@@ -108,6 +150,16 @@ def store_digits(n):
     >>> print("Do not use str or reversed!") if any([r in cleaned for r in ["str", "reversed"]]) else None
     """
     "*** YOUR CODE HERE ***"
+    s = Link(n % 10)
+    n = n // 10
+    while (n != 0):
+        s = Link(n % 10, s)
+        # 上面这个代码可以，下面这个代码就不行，真是神奇
+        # s.first = n % 10
+        # s.rest = a
+        n = n // 10
+    return s
+
 
 
 def is_bst(t):
