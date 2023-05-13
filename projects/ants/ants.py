@@ -8,6 +8,8 @@ from collections import OrderedDict
 # Core Classes #
 ################
 # CS61A中最期待的Project来了
+# 当然做完之后就不期待了，还是有点难的
+# 调用方法：在windows下，python3 ants_gui.py --food 1000
 class Place:
     """A Place holds insects and has an exit to another Place."""
 
@@ -127,7 +129,20 @@ class Ant(Insect):
             place.ant = self
         else:
             # BEGIN Problem Optional 2
-            assert place.ant is None, 'Two ants in {0}'.format(place)
+            # 这里参考了别人的做法
+            old_ant = place.ant
+            new_ant = self
+            old_contain_new = (isinstance(old_ant, ContainerAnt) and old_ant.can_contain(new_ant))
+            new_contain_old = (isinstance(new_ant, ContainerAnt) and new_ant.can_contain(old_ant))
+            assert (old_contain_new == True or new_contain_old == True), 'Two ants in {0}'.format(place)
+            if old_contain_new:
+                old_ant.contain_ant(new_ant)
+                place.ant = old_ant
+            else:
+                # print(old_contain_new == True or new_contain_old == True)
+                new_ant.contain_ant(old_ant)
+                place.ant = new_ant
+            # assert place.ant is None, 'Two ants in {0}'.format(place)
             # END Problem Optional 2
         Insect.add_to(self, place)
 
@@ -518,11 +533,18 @@ class ContainerAnt(Ant):
     def can_contain(self, other):
         # BEGIN Problem Optional 2
         "*** YOUR CODE HERE ***"
+        # 注意下面的条件是and而不是or
+        if self.contained_ant == None and (not isinstance(other, ContainerAnt)):
+            return True
+        else:
+            return False
         # END Problem Optional 2
 
     def contain_ant(self, ant):
         # BEGIN Problem Optional 2
         "*** YOUR CODE HERE ***"
+        if self.can_contain(ant):
+            self.contained_ant = ant
         # END Problem Optional 2
 
     def remove_ant(self, ant):
@@ -543,6 +565,8 @@ class ContainerAnt(Ant):
     def action(self, gamestate):
         # BEGIN Optional 2
         "*** YOUR CODE HERE ***"
+        if self.contained_ant != None:
+            self.contained_ant.action(gamestate)
         # END Optional 2
 
 
@@ -553,7 +577,10 @@ class BodyguardAnt(ContainerAnt):
     food_cost = 4
     # OVERRIDE CLASS ATTRIBUTES HERE
     # BEGIN Optional 2
-    implemented = False   # Change to True to view in the GUI
+    implemented = True   # Change to True to view in the GUI
+
+    def __init__(self, armor=2):
+        super().__init__(armor)
     # END Optional 2
 
 
@@ -574,6 +601,11 @@ class TankAnt(ContainerAnt):
     def action(self, gamestate):
         # BEGIN Problem Optional 3
         "*** YOUR CODE HERE ***"
+        copy_place = self.place
+        copy = list(copy_place.bees)
+        for bee in copy:
+            bee.reduce_armor(self.damage)
+        ContainerAnt.action(self, gamestate)
         # END Problem Optional 3
 
 
