@@ -121,40 +121,41 @@ public class IntList {
 //            return cur;
 
 //            method 2
-//            IntList B = reverse(A.rest);
-//            A.rest.rest = A;
-//            A.rest = null;
-//            return B;
+            IntList B = reverse(A.rest);
+            A.rest.rest = A;
+            A.rest = null;
+            return B;
 
             // method 3
-            IntList B = A;
-            int count = 0;
-            while (B.rest != null){
-                B = B.rest;
-                count++;
-            }
-            B.rest = A;
-
-            IntList C = A.rest;
-            B = A.rest;
-            while (B.rest != null){
-                B = B.rest;
-            }
-            A.rest = B;
-            B.rest = C;
-
-            int i = 0;
-            while (i < count){
-                IntList D = null;
-                IntList E = null;
-                for (int j = 0; j < i; j++){
-                    E = E.rest;
-                }
-                for (int j = 0; j < i + 1; j++){
-                    D = D.rest;
-                }
-            }
-            return A;
+            // 昨天写到这里的时候人要昏过去了
+//            IntList B = A;
+//            int count = 0;
+//            while (B.rest != null){
+//                B = B.rest;
+//                count++;
+//            }
+//            B.rest = A;
+//
+//            IntList C = A.rest;
+//            B = A.rest;
+//            while (B.rest != null){
+//                B = B.rest;
+//            }
+//            A.rest = B;
+//            B.rest = C;
+//
+//            int i = 0;
+//            while (i < count){
+//                IntList D = null;
+//                IntList E = null;
+//                for (int j = 0; j < i; j++){
+//                    E = E.rest;
+//                }
+//                for (int j = 0; j < i + 1; j++){
+//                    D = D.rest;
+//                }
+//            }
+//            return A;
         }
     }
 
