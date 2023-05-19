@@ -11,11 +11,11 @@ public class IntList {
     /**
      * First element of list.
      */
-    public int first;
+    private int first;
     /**
      * Remaining elements of list.
      */
-    public IntList rest;
+    private IntList rest;
 
     /**
      * A List with first FIRST0 and rest REST0.
@@ -108,7 +108,7 @@ public class IntList {
             return A;
         } else {
             // reference solution
-            IntList p = new IntList(A.first, A.rest);//但是这里new了一个新的链表，要我这么做我也行
+            IntList p = new IntList(A.first, A.rest); // 但是这里new了一个新的链表，要我这么做我也行
             IntList front = null;
             IntList next;
             IntList end = null;
@@ -128,54 +128,54 @@ public class IntList {
     }
 
 
-//            这里要注意当A到最后一个节点时，参数里的A也会变
-//            method 1
-//            IntList pre = A;
-//            IntList cur = null;
-//            while (pre != null){
-//                IntList t = pre.rest;
-//                pre.rest = cur;
-//                cur = pre;
-//                pre = t;
-//            }
-//            return cur;
+    //            这里要注意当A到最后一个节点时，参数里的A也会变
+    //            method 1
+    //            IntList pre = A;
+    //            IntList cur = null;
+    //            while (pre != null){
+    //                IntList t = pre.rest;
+    //                pre.rest = cur;
+    //                cur = pre;
+    //                pre = t;
+    //            }
+    //            return cur;
 
-//            method 2
-//            IntList B = reverse(A.rest);
-//            A.rest.rest = A;
-//            A.rest = null;
-//            return B;
+    //            method 2
+    //            IntList B = reverse(A.rest);
+    //            A.rest.rest = A;
+    //            A.rest = null;
+    //            return B;
 
-//             method 3
-//             昨天写到这里的时候人要昏过去了
-//            IntList B = A;
-//            int count = 0;
-//            while (B.rest != null){
-//                B = B.rest;
-//                count++;
-//            }
-//            B.rest = A;
-//
-//            IntList C = A.rest;
-//            B = A.rest;
-//            while (B.rest != null){
-//                B = B.rest;
-//            }
-//            A.rest = B;
-//            B.rest = C;
-//
-//            int i = 0;
-//            while (i < count){
-//                IntList D = null;
-//                IntList E = null;
-//                for (int j = 0; j < i; j++){
-//                    E = E.rest;
-//                }
-//                for (int j = 0; j < i + 1; j++){
-//                    D = D.rest;
-//                }
-//            }
-//            return A;
+    //             method 3
+    //             昨天写到这里的时候人要昏过去了
+    //            IntList B = A;
+    //            int count = 0;
+    //            while (B.rest != null){
+    //                B = B.rest;
+    //                count++;
+    //            }
+    //            B.rest = A;
+    //
+    //            IntList C = A.rest;
+    //            B = A.rest;
+    //            while (B.rest != null){
+    //                B = B.rest;
+    //            }
+    //            A.rest = B;
+    //            B.rest = C;
+    //
+    //            int i = 0;
+    //            while (i < count){
+    //                IntList D = null;
+    //                IntList E = null;
+    //                for (int j = 0; j < i; j++){
+    //                    E = E.rest;
+    //                }
+    //                for (int j = 0; j < i + 1; j++){
+    //                    D = D.rest;
+    //                }
+    //            }
+    //            return A;
 
 
 
