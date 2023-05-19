@@ -29,7 +29,7 @@ public class IntList {
      * A List with null rest, and first = 0.
      */
     public IntList() {
-    /* NOTE: public IntList () { }  would also work. */
+        /* NOTE: public IntList () { }  would also work. */
         this(0, null);
     }
 
@@ -82,10 +82,10 @@ public class IntList {
 
     public static IntList dcatenate(IntList A, IntList B) {
         IntList k = A;
-        if (k == null){
+        if (k == null) {
             return B;
         }
-        while (k.rest != null){
+        while (k.rest != null) {
             k = k.rest;
         }
         k.rest = B;
@@ -97,17 +97,37 @@ public class IntList {
      * * elements of B.  May NOT modify items of A.  Use 'new'.
      */
     public static IntList catenate(IntList A, IntList B) {
-        if (A == null){
+        if (A == null) {
             return B;
         }
         return new IntList(A.first, catenate(A.rest, B));
     }
 
-    public static IntList reverse(IntList A){
-        if (A == null || A.rest == null){
+    public static IntList reverse(IntList A) {
+        if (A == null || A.rest == null) {
+            return A;
+        } else {
+            // reference solution
+            IntList p = new IntList(A.first, A.rest);//但是这里new了一个新的链表，要我这么做我也行
+            IntList front = null;
+            IntList next;
+            IntList end = null;
+            while (p != null) {
+                next = p.rest;
+                p.rest = front;
+                front = p;
+                if (next == null) {
+                    end = p;
+                }
+                p = next;
+            }
+            A.first = end.first;
+            A.rest = end.rest;
             return A;
         }
-        else{
+    }
+
+
 //            这里要注意当A到最后一个节点时，参数里的A也会变
 //            method 1
 //            IntList pre = A;
@@ -121,13 +141,13 @@ public class IntList {
 //            return cur;
 
 //            method 2
-            IntList B = reverse(A.rest);
-            A.rest.rest = A;
-            A.rest = null;
-            return B;
+//            IntList B = reverse(A.rest);
+//            A.rest.rest = A;
+//            A.rest = null;
+//            return B;
 
-            // method 3
-            // 昨天写到这里的时候人要昏过去了
+//             method 3
+//             昨天写到这里的时候人要昏过去了
 //            IntList B = A;
 //            int count = 0;
 //            while (B.rest != null){
@@ -156,10 +176,6 @@ public class IntList {
 //                }
 //            }
 //            return A;
-        }
-    }
-
-
 
 
 
