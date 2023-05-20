@@ -27,7 +27,7 @@ public class NBody {
         return A;
     }
 
-    public static String imageToDraw = "images/starfield.jpg";
+    private static final String imageToDraw = "images/starfield.jpg";
 
     public static void main(String[] args){
         double T = Double.parseDouble(args[0]);
