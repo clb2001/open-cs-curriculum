@@ -106,25 +106,38 @@ public class IntList {
     public static IntList reverse(IntList A) {
         if (A == null || A.rest == null) {
             return A;
-        } else {
-            // reference solution
-            IntList p = new IntList(A.first, A.rest); // 但是这里new了一个新的链表，要我这么做我也行
-            IntList front = null;
-            IntList next;
-            IntList end = null;
-            while (p != null) {
-                next = p.rest;
-                p.rest = front;
-                front = p;
-                if (next == null) {
-                    end = p;
-                }
-                p = next;
-            }
-            A.first = end.first;
-            A.rest = end.rest;
-            return A;
         }
+//        } else {
+//            // reference solution
+//            IntList p = new IntList(A.first, A.rest); // 但是这里new了一个新的链表，要我这么做我也行
+//            IntList front = null;
+//            IntList next;
+//            IntList end = null;
+//            while (p != null) {
+//                next = p.rest;
+//                p.rest = front;
+//                front = p;
+//                if (next == null) {
+//                    end = p;
+//                }
+//                p = next;
+//            }
+//            A.first = end.first;
+//            A.rest = end.rest;
+//            return A;
+//        }
+        else{
+                IntList pre = A;
+                IntList cur = null;
+                while (pre != null){
+                    IntList t = pre.rest;
+                    pre.rest = cur;
+                    cur = pre;
+                    pre = t;
+                }
+//                A = cur;
+                return cur;
+            }
     }
 
 
