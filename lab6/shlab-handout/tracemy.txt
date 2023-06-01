@@ -1,0 +1,11 @@
+#
+# tracemy.txt - test bg and fg
+#
+/bin/echo -e tsh> ./myspin 4 \046
+./myspin 4 &
+
+/bin/echo tsh> bg %1
+bg %1
+
+/bin/echo tsh> jobs
+jobs
