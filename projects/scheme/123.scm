@@ -1,0 +1,6 @@
+(define (enumerate s)
+  (define (enumerate-from n remainder-s)
+  (cond ((null? remainder-s) remainder-s)
+    (else (cons ((n car(remainder-s))) (enumerate-from (+ 1 n) cdr(remainder-s))))))
+  (enumerate-from 0 s)
+)

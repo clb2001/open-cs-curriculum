@@ -1,0 +1,2 @@
+Pair('a', Pair('b', Pair('c', nil)))
+Pair(Pair('+', Pair('a', Pair(Pair('*', Pair('b', Pair('c', nil))), nil))), nil)
