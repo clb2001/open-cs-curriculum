@@ -127,16 +127,20 @@ def negSamplingLossAndGradient(
     ### YOUR CODE HERE (~10 Lines)
 
     ### Please use your implementation of sigmoid in here.
-    sigmoid_negative_sample_dot_with_Vc = sigmoid(outsideVectors[negSampleWordIndices])
-    sigmoid_Vo_dot_with_Vc = sigmoid(outsideVectors[outsideWordIdx]@centerWordVec)
-    loss = -np.log(sigmoid_Vo_dot_with_Vc) - np.sum(np.log(1-sigmoid_negative_sample_dot_with_Vc))
-    gradCenterVec = sigmoid_Vo_dot_with_Vc * outsideVectors[outsideWordIdx] \
-                    + np.sum(sigmoid_negative_sample_dot_with_Vc.reshape(-1,1))
-    # np.zeros_like(a)的目的是构建一个与a同维度的数组，并初始化所有变量为零
-    gradOutsideVecs = np.zeros_like(outsideVectors)
-    gradOutsideVecs[outsideWordIdx] = (sigmoid_Vo_dot_with_Vc) * centerWordVec
-    for i, j in enumerate(negSampleWordIndices):
-        gradOutsideVecs[j] += sigmoid_negative_sample_dot_with_Vc[i] * centerWordVec
+    U, vc, o = outsideVectors, centerWordVec, outsideWordIdx
+    gradCenterVec, gradOutsideVecs = np.zeros(vc.shape), np.zeros(U.shape)
+    yhat = sigmoid(np.dot(U, vc))
+    loss = -np.log(yhat[o])
+    yhat[o] -= 1
+    gradCenterVec += U[o] * yhat[o]
+    gradOutsideVecs[o] += vc * yhat[o]
+    for k in range(len(indices)):
+        if indices[k] != o:
+            neg = indices[k]
+            negsig = sigmoid(-np.dot(U[neg], vc))
+            loss -= np.log(negsig)
+            gradCenterVec += np.multiply(U[neg], 1-negsig)
+            gradOutsideVecs[neg] += np.multiply(vc, 1-negsig)
     ### END YOUR CODE
 
     return loss, gradCenterVec, gradOutsideVecs
@@ -182,14 +186,14 @@ def skipgram(currentCenterWord, windowSize, outsideWords, word2Ind,
     gradOutsideVectors = np.zeros(outsideVectors.shape)
 
     ### YOUR CODE HERE (~8 Lines)
-    centerWordIndex = word2Ind[currentCenterWord]
-    centerWordVector = centerWordVectors[centerWordIndex]
-    for outsideword in outsideWords:
-        outsidewordIndex = word2Ind[outsideword]
-        now_loss, now_c_grad, now_o_grad = word2vecLossAndGradient(centerWordVector, centerWordIndex, outsideVectors, dataset)
-        loss += now_loss
-        gradCenterVecs[centerWordIndex] += now_c_grad
-        gradOutsideVectors += now_o_grad
+    U, vc = outsideVectors, centerWordVectors
+    cur = vc[word2Ind[currentCenterWord]]
+    for i in outsideWords:
+        outside_i, cur_i = word2Ind[i], word2Ind[currentCenterWord]
+        loss_i, gradVC_i, gradU_i = word2vecLossAndGradient(cur, outside_i, U, dataset)
+        loss += loss_i
+        gradCenterVecs[cur_i] += gradVC_i
+        gradOutsideVectors += gradU_i
     ### END YOUR CODE
     
     return loss, gradCenterVecs, gradOutsideVectors

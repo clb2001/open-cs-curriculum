@@ -32,8 +32,10 @@ class PartialParse(object):
         ### Note: The root token should be represented with the string "ROOT"
         ### Note: If you need to use the sentence object to initialize anything, make sure to not directly 
         ###       reference the sentence object.  That is, remember to NOT modify the sentence object. 
-
-
+        self.sentence = sentence
+        self.stack = ["ROOT"]
+        self.buffer = sentence.copy()
+        self.dependencies = []
         ### END YOUR CODE
 
 
@@ -51,8 +53,14 @@ class PartialParse(object):
         ###         1. Shift
         ###         2. Left Arc
         ###         3. Right Arc
-
-
+        if transition == "S" and len(self.buffer) != 0:
+            self.stack.append(self.buffer[0])
+            self.buffer.pop(0)
+        elif transition == "LA":
+            first = self.stack.pop()
+            second = self.stack.pop()
+            self.dependencies.append((second, first))
+            self.stack.append(second)
         ### END YOUR CODE
 
     def parse(self, transitions):
@@ -105,7 +113,19 @@ def minibatch_parse(sentences, model, batch_size):
 
 
     ### END YOUR CODE
-
+    parses = []
+    for s in sentences:
+        partial_parse = PartialParse(sentences=s)
+        parses.append(partial_parse)
+    unfinished_parses = parses[:]
+    while len(unfinished_parses) > 0:
+        mini_batch = unfinished_parses[0: batch_size]
+        trans = model.predict(mini_batch)
+        for parse, tran in zip(mini_batch, trans):
+            parse.parse_step(tran)
+            if len(parse.buffer) == 0 and len(parse.stack) == 1:
+                unfinished_parses.remove(parse)
+    dependencies = [p.dependencies for p in parses]
     return dependencies
 
 
