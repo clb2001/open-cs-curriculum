@@ -168,6 +168,23 @@ class CharCorruptionDataset(Dataset):
 
     def __getitem__(self, idx):
         # TODO [part e]: see spec above
+        # step 0: truncate
+        document = self.data[idx]
+        document = document[:random.randint(4, int(self.block_size * 7 / 8))]
+        
+        # step 1: prepare mask length and cut index
+        mean_len = round(len(document) / 4)
+        mask_len =  mean_len + random.randint(-mean_len, mean_len)
+        clip_idx = random.randint(0, mask_len)
+        
+        # step 2: prefix, suffix, mc
+        prefix = document[: clip_idx]
+        suffix = document[clip_idx + mask_len:]
+        masked_content = document[clip_idx : clip_idx + mask_len]
+        
+        # step 3: generate the masked string by taking out masked content
+        masked_string = prefix + self.MASK_CHAR + suffix + self.MASK_CHAR + masked_content
+        masked_string += self.PAD_CHAR * (self.block_size - len(masked_string))
         raise NotImplementedError
 
 """

@@ -109,8 +109,6 @@ class ParserModel(nn.Module):
         ###     View: https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
         ###     Flatten: https://pytorch.org/docs/stable/generated/torch.flatten.html
         x = torch.index_select(self.embeddings, 0, w.flatten()).reshape(w.shape[0], -1)
-
-
         ### END YOUR CODE
         return x
 

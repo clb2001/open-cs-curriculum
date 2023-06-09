@@ -82,7 +82,20 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/nn.html#torch.nn.Dropout
         ###     Conv1D Layer:
         ###         https://pytorch.org/docs/stable/generated/torch.nn.Conv1d.html
-
+        # self.encoder = nn.LSTM(embed_size, hidden_size, bidirectional=True): 这是一个LSTM编码器（encoder），用于将输入序列编码为一个固定长度的向量表示。embed_size 是输入嵌入向量的维度，hidden_size 是LSTM隐藏状态的维度，bidirectional=True 表示使用双向LSTM。
+        # self.decoder = nn.LSTMCell(embed_size + hidden_size, hidden_size): 这是一个LSTM解码器（decoder），用于生成目标序列。它接收来自编码器的向量表示和上一个时间步的输出作为输入，然后生成当前时间步的隐藏状态。
+        # self.h_projection, self.c_projection, self.att_projection: 这些是线性投影层，用于将编码器的双向隐藏状态映射到解码器的隐藏状态的维度。self.h_projection 和 self.c_projection 分别投影编码器隐藏状态的前向和后向部分，self.att_projection 用于计算注意力权重。
+        # self.combined_output_projection: 这是一个线性投影层，将解码器的隐藏状态、注意力权重加权的编码器隐藏状态和输入嵌入向量组合起来，生成一个综合的输出表示。
+        # self.target_vocab_projection: 这是一个线性投影层，将综合输出表示映射到目标词汇的维度。它用于生成下一个时间步的输出概率分布。
+        # self.dropout: 这是一个用于随机丢弃一部分神经元的操作，有助于减少过拟合。
+        self.encoder = nn.LSTM(embed_size, hidden_size, bidirectional=True)
+        self.decoder = nn.LSTMCell(embed_size + hidden_size, hidden_size)
+        self.h_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
+        self.c_projection = nn.Linear(2 * hidden_size, hidden_size, bisa=False)
+        self.att_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
+        self.combined_output_projection = nn.Linear(3 * hidden_size, hidden_size, bias=False)
+        self.target_vocab_projection = nn.Linear(hidden_size, len(vocab.tgt), bia=False)
+        self.dropout = nn.Dropout(dropout_rate)
         ### END YOUR CODE
 
     def forward(self, source: List[List[str]], target: List[List[str]]) -> torch.Tensor:
@@ -178,8 +191,17 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/generated/torch.permute.html
         ###     Tensor Reshape (a possible alternative to permute):
         ###         https://pytorch.org/docs/stable/generated/torch.Tensor.reshape.html
-
-
+        # compute the input matrix of source sentences with shape of (src_len, b, e)
+        X = self.model_embeddings.source(source_padded.T).permute(1, 0, 2)
+        X_packed = pack_padded_sequence(X, source_lengths)
+        
+        #compute the encoder hidden states, last hidden and cell states
+        enc_hiddens, (last_hidden, last_cell) = self.encoder(X_packed)
+        enc_hiddens = pad_packed_sequence(enc_hiddens)[0].permute(1, 0, 2)
+        
+        #compute the concatenated and projected last hidden and cell states
+        state = torch.cat([*last_hidden], dim=1), torch.cat([*last_cell], dim=1)
+        dec_init_state = self.h_projection(state[0]), self.c_projection(state[1])
         ### END YOUR CODE
 
         return enc_hiddens, dec_init_state
@@ -247,9 +269,15 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.cat
         ###     Tensor Stacking:
         ###         https://pytorch.org/docs/stable/torch.html#torch.stack
-
-
-
+        enc_hiddens_proj = self.att_projection(enc_hiddens)
+        Y = self.model_embeddings.target(target_padded.T).permute(1, 0, 2)
+        for Y_t in torch.split(Y, 1):
+            Y_t = Y_t.sqeeze()
+            Ybar_t = torch.cat([Y_t, o_prev], dim=1)
+            dec_state, o_t, _ = self.step(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks)
+            combined_outputs.append(o_t)
+            o_prev = o_t
+        combined_outputs = torch.stack(combined_outputs)
         ### END YOUR CODE
 
         return combined_outputs
@@ -305,8 +333,9 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.unsqueeze
         ###     Tensor Squeeze:
         ###         https://pytorch.org/docs/stable/torch.html#torch.squeeze
-
-
+        dec_state = self.decoder(Ybar_t, dec_state)
+        dec_hidden, dec_cell = dec_state
+        e_t = torch.bmm(enc_hiddens_proj, dec_hidden.unsqueeze(-1)).squeeze(-1)
         ### END YOUR CODE
 
         # Set e_t to -inf where enc_masks has 1
@@ -340,8 +369,16 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.cat
         ###     Tanh:
         ###         https://pytorch.org/docs/stable/torch.html#torch.tanh
-
-
+        # compute the attention impact
+        alpha_t = F.softmax(e_t, dim=1)
+        a_t = torch.bmm(alpha_t.unsqueeze(1), enc_hiddens).squeeze(1)
+        
+        # compute with dec_hidden and project
+        U_t = torch.cat([dec_hidden, a_t], dim=1)
+        V_t = self.combined_output_projection(U_t)
+        
+        # compute the t'th batch output
+        O_t = self.dropout(torch.tanh(V_t))
         ### END YOUR CODE
 
         combined_output = O_t

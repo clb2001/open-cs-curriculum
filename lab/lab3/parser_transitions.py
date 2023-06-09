@@ -32,7 +32,6 @@ class PartialParse(object):
         ### Note: The root token should be represented with the string "ROOT"
         ### Note: If you need to use the sentence object to initialize anything, make sure to not directly 
         ###       reference the sentence object.  That is, remember to NOT modify the sentence object. 
-        self.sentence = sentence
         self.stack = ["ROOT"]
         self.buffer = sentence.copy()
         self.dependencies = []
@@ -53,14 +52,12 @@ class PartialParse(object):
         ###         1. Shift
         ###         2. Left Arc
         ###         3. Right Arc
-        if transition == "S" and len(self.buffer) != 0:
-            self.stack.append(self.buffer[0])
-            self.buffer.pop(0)
-        elif transition == "LA":
-            first = self.stack.pop()
-            second = self.stack.pop()
-            self.dependencies.append((second, first))
-            self.stack.append(second)
+        if transition == 'S':
+            self.stack.append(self.buffer.pop(0))
+        elif transition == 'LA':
+            self.dependencies.append((self.stack[-1], self.stack.pop(-2)))
+        elif transition == 'RA':
+            self.dependencies.append((self.stack[-2], self.stack.pop(-1)))
         ### END YOUR CODE
 
     def parse(self, transitions):
@@ -110,22 +107,41 @@ def minibatch_parse(sentences, model, batch_size):
     ###             contains references to the same objects. Thus, you should NOT use the `del` operator
     ###             to remove objects from the `unfinished_parses` list. This will free the underlying memory that
     ###             is being accessed by `partial_parses` and may cause your code to crash.
-
-
-    ### END YOUR CODE
-    parses = []
-    for s in sentences:
-        partial_parse = PartialParse(sentences=s)
-        parses.append(partial_parse)
-    unfinished_parses = parses[:]
+    partial_parses = [PartialParse(sentence) for sentence in sentences]
+    unfinished_parses = partial_parses[:] # shallow copy
     while len(unfinished_parses) > 0:
-        mini_batch = unfinished_parses[0: batch_size]
-        trans = model.predict(mini_batch)
-        for parse, tran in zip(mini_batch, trans):
-            parse.parse_step(tran)
-            if len(parse.buffer) == 0 and len(parse.stack) == 1:
-                unfinished_parses.remove(parse)
-    dependencies = [p.dependencies for p in parses]
+        # 从unfinished parses中取出第一个batchsize的parses
+        minibatch_partial_parses = unfinished_parses[:batch_size]
+        
+        # 模型预测minibatch中每个部分解析器的下一个转换步骤
+        minibatch_transitions = model.predict(minibatch_partial_parses)
+        
+        # 根据预测结果，在minibatch中的各个局部解析，执行解析步骤
+        for transition, partial_parse in zip(minibatch_transitions, minibatch_partial_parses):
+            partial_parse.parse_step(transition)
+      
+        # 从未完成的解析中删除已完成的解析(空缓冲区和大小为1的堆栈)。
+        unfinished_parses = [
+            partial_parse for partial_parse in unfinished_parses 
+            if not (len(partial_parse.buffer) == 0 and len(partial_parse.stack) == 1)
+        ]
+        
+    for partial_parse in partial_parses:
+        dependencies.append(partial_parse.dependencies)
+    ### END YOUR CODE
+    # parses = []
+    # for s in sentences:
+    #     partial_parse = PartialParse(sentences=s)
+    #     parses.append(partial_parse)
+    # unfinished_parses = parses[:]
+    # while len(unfinished_parses) > 0:
+    #     mini_batch = unfinished_parses[0: batch_size]
+    #     trans = model.predict(mini_batch)
+    #     for parse, tran in zip(mini_batch, trans):
+    #         parse.parse_step(tran)
+    #         if len(parse.buffer) == 0 and len(parse.stack) == 1:
+    #             unfinished_parses.remove(parse)
+    # dependencies = [p.dependencies for p in parses]
     return dependencies
 
 
