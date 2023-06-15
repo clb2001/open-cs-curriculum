@@ -88,7 +88,7 @@ class NMT(nn.Module):
         # self.combined_output_projection: 这是一个线性投影层，将解码器的隐藏状态、注意力权重加权的编码器隐藏状态和输入嵌入向量组合起来，生成一个综合的输出表示。
         # self.target_vocab_projection: 这是一个线性投影层，将综合输出表示映射到目标词汇的维度。它用于生成下一个时间步的输出概率分布。
         # self.dropout: 这是一个用于随机丢弃一部分神经元的操作，有助于减少过拟合。
-        self.post_embed_cnn = nn.Convld(embed_size, embed_size, kernel_size=2, padding=1)
+        self.post_embed_cnn = nn.Conv1d(embed_size, embed_size, kernel_size=2, padding=1)
         self.encoder = nn.LSTM(embed_size, hidden_size, bidirectional=True)
         self.decoder = nn.LSTMCell(embed_size + hidden_size, hidden_size, bias=True)
         self.h_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
