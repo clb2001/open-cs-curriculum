@@ -18,14 +18,16 @@ def sigmoid(x):
     """
 
     ### YOUR CODE HERE (~1 Line)
-    if (isinstance(x, np.ndarray)):
-        s = np.zeros_like(x, dtype = float)
-        positive_mask = (x >= 0)
-        negative_mask = (x < 0)
-        s[positive_mask] = 1 / (1 + (np.exp(-x[positive_mask])))
-        s[negative_mask] = np.exp(x[negative_mask]) / (1 + (np.exp(x[negative_mask])))
-    else:
-        s = 1 / (1 + np.exp(-x))
+    # if (isinstance(x, np.ndarray)):
+    #     s = np.zeros_like(x, dtype = float)
+    #     positive_mask = (x >= 0)
+    #     negative_mask = (x < 0)
+    #     s[positive_mask] = 1 / (1 + (np.exp(-x[positive_mask])))
+    #     s[negative_mask] = np.exp(x[negative_mask]) / (1 + (np.exp(x[negative_mask])))
+    # else:
+    #     s = 1 / (1 + np.exp(-x))
+    
+    s = 1 / (1 + np.exp(-x))
     ### END YOUR CODE
 
     return s
@@ -74,13 +76,20 @@ def naiveSoftmaxLossAndGradient(
 
     # @是一个装饰器，针对函数，起调用传参的作用
     # 但是这里表示的是矩阵的乘法
-    softmax_array = outsideVectors @ centerWordVec
-    pre = softmax(softmax_array)
-    loss = -np.log(pre[outsideWordIdx])
-    pre_minus_y = pre
-    pre_minus_y[outsideWordIdx] -= 1
-    gradCenterVec = outsideVectors.T @ pre_minus_y
-    gradOutsideVecs = centerWordVec * pre_minus_y.reshape(-1, 1)
+    # softmax_array = outsideVectors @ centerWordVec
+    # pre = softmax(softmax_array)
+    # loss = -np.log(pre[outsideWordIdx])
+    # pre_minus_y = pre
+    # pre_minus_y[outsideWordIdx] -= 1
+    # gradCenterVec = outsideVectors.T @ pre_minus_y
+    # gradOutsideVecs = centerWordVec * pre_minus_y.reshape(-1, 1)
+    
+    U, vc, o = outsideVectors, centerWordVec, outsideWordIdx
+    yhat = softmax(np.dot(U, vc))
+    loss = -np.log(yhat[o])
+    yhat[o] -= 1
+    gradCenterVec = np.dot(U.T, yhat)
+    gradOutsideVecs = np.dot(yhat[:, np.newaxis], vc[:, np.newaxis].T)
     ### END YOUR CODE
 
     return loss, gradCenterVec, gradOutsideVecs
