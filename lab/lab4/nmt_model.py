@@ -88,13 +88,14 @@ class NMT(nn.Module):
         # self.combined_output_projection: 这是一个线性投影层，将解码器的隐藏状态、注意力权重加权的编码器隐藏状态和输入嵌入向量组合起来，生成一个综合的输出表示。
         # self.target_vocab_projection: 这是一个线性投影层，将综合输出表示映射到目标词汇的维度。它用于生成下一个时间步的输出概率分布。
         # self.dropout: 这是一个用于随机丢弃一部分神经元的操作，有助于减少过拟合。
+        self.post_embed_cnn = nn.Convld(embed_size, embed_size, kernel_size=2, padding=1)
         self.encoder = nn.LSTM(embed_size, hidden_size, bidirectional=True)
-        self.decoder = nn.LSTMCell(embed_size + hidden_size, hidden_size)
+        self.decoder = nn.LSTMCell(embed_size + hidden_size, hidden_size, bias=True)
         self.h_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
-        self.c_projection = nn.Linear(2 * hidden_size, hidden_size, bisa=False)
+        self.c_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
         self.att_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
         self.combined_output_projection = nn.Linear(3 * hidden_size, hidden_size, bias=False)
-        self.target_vocab_projection = nn.Linear(hidden_size, len(vocab.tgt), bia=False)
+        self.target_vocab_projection = nn.Linear(hidden_size, len(vocab.tgt), bias=False)
         self.dropout = nn.Dropout(dropout_rate)
         ### END YOUR CODE
 
@@ -191,17 +192,28 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/generated/torch.permute.html
         ###     Tensor Reshape (a possible alternative to permute):
         ###         https://pytorch.org/docs/stable/generated/torch.Tensor.reshape.html
-        # compute the input matrix of source sentences with shape of (src_len, b, e)
-        X = self.model_embeddings.source(source_padded.T).permute(1, 0, 2)
-        X_packed = pack_padded_sequence(X, source_lengths)
         
-        #compute the encoder hidden states, last hidden and cell states
-        enc_hiddens, (last_hidden, last_cell) = self.encoder(X_packed)
-        enc_hiddens = pad_packed_sequence(enc_hiddens)[0].permute(1, 0, 2)
+        # # compute the input matrix of source sentences with shape of (src_len, b, e)
+        # X = self.model_embeddings.source(source_padded.T).permute(1, 0, 2)
+        # X_packed = pack_padded_sequence(X, source_lengths)
         
-        #compute the concatenated and projected last hidden and cell states
-        state = torch.cat([*last_hidden], dim=1), torch.cat([*last_cell], dim=1)
-        dec_init_state = self.h_projection(state[0]), self.c_projection(state[1])
+        # #compute the encoder hidden states, last hidden and cell states
+        # enc_hiddens, (last_hidden, last_cell) = self.encoder(X_packed)
+        # enc_hiddens = pad_packed_sequence(enc_hiddens)[0].permute(1, 0, 2)
+        
+        # #compute the concatenated and projected last hidden and cell states
+        # state = torch.cat([*last_hidden], dim=1), torch.cat([*last_cell], dim=1)
+        # dec_init_state = self.h_projection(state[0]), self.c_projection(state[1])
+        
+        X = self.model_embeddings.source(source_padded).permute(1, 2, 0)
+        X = self.post_embed_cnn(X).permute(2, 0, 1)
+        X = pack_padded_sequence(X, source_lengths)
+        enc_hiddens, (last_hidden, last_cell) = self.encoder(X)
+        enc_hiddens, _ = pad_packed_sequence(enc_hiddens)
+        enc_hiddens = enc_hiddens.permute(1, 0, 2)
+        last_hidden = torch.cat((last_hidden[0], last_hidden[1]), dim=1)
+        last_cell = torch.cat((last_cell[0], last_cell[1]), dim=1)
+        dec_init_state = (self.h_projection(last_hidden), self.c_projection(last_cell))
         ### END YOUR CODE
 
         return enc_hiddens, dec_init_state
@@ -270,9 +282,9 @@ class NMT(nn.Module):
         ###     Tensor Stacking:
         ###         https://pytorch.org/docs/stable/torch.html#torch.stack
         enc_hiddens_proj = self.att_projection(enc_hiddens)
-        Y = self.model_embeddings.target(target_padded.T).permute(1, 0, 2)
+        Y = self.model_embeddings.target(target_padded)
         for Y_t in torch.split(Y, 1):
-            Y_t = Y_t.sqeeze()
+            Y_t = Y_t.sqeeze(Y_t, dim=0)
             Ybar_t = torch.cat([Y_t, o_prev], dim=1)
             dec_state, o_t, _ = self.step(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks)
             combined_outputs.append(o_t)
@@ -334,7 +346,7 @@ class NMT(nn.Module):
         ###     Tensor Squeeze:
         ###         https://pytorch.org/docs/stable/torch.html#torch.squeeze
         dec_state = self.decoder(Ybar_t, dec_state)
-        dec_hidden, dec_cell = dec_state
+        dec_hidden, _ = dec_state
         e_t = torch.bmm(enc_hiddens_proj, dec_hidden.unsqueeze(-1)).squeeze(-1)
         ### END YOUR CODE
 
@@ -374,7 +386,7 @@ class NMT(nn.Module):
         a_t = torch.bmm(alpha_t.unsqueeze(1), enc_hiddens).squeeze(1)
         
         # compute with dec_hidden and project
-        U_t = torch.cat([dec_hidden, a_t], dim=1)
+        U_t = torch.cat((dec_hidden, a_t), dim=1)
         V_t = self.combined_output_projection(U_t)
         
         # compute the t'th batch output
