@@ -89,7 +89,7 @@ class NMT(nn.Module):
         # self.target_vocab_projection: 这是一个线性投影层，将综合输出表示映射到目标词汇的维度。它用于生成下一个时间步的输出概率分布。
         # self.dropout: 这是一个用于随机丢弃一部分神经元的操作，有助于减少过拟合。
         self.post_embed_cnn = nn.Conv1d(embed_size, embed_size, kernel_size=2, padding=1)
-        self.encoder = nn.LSTM(embed_size, hidden_size, bidirectional=True)
+        self.encoder = nn.LSTM(embed_size, hidden_size, bias=True, bidirectional=True)
         self.decoder = nn.LSTMCell(embed_size + hidden_size, hidden_size, bias=True)
         self.h_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
         self.c_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
@@ -285,7 +285,7 @@ class NMT(nn.Module):
         Y = self.model_embeddings.target(target_padded)
         for Y_t in torch.split(Y, 1):
             Y_t = torch.squeeze(Y_t, dim=0)
-            Ybar_t = torch.cat([Y_t, o_prev], dim=1)
+            Ybar_t = torch.cat((Y_t, o_prev), dim=1)
             dec_state, o_t, _ = self.step(Ybar_t, dec_state, enc_hiddens, enc_hiddens_proj, enc_masks)
             combined_outputs.append(o_t)
             o_prev = o_t
@@ -347,7 +347,7 @@ class NMT(nn.Module):
         ###         https://pytorch.org/docs/stable/torch.html#torch.squeeze
         dec_state = self.decoder(Ybar_t, dec_state)
         dec_hidden, _ = dec_state
-        e_t = torch.bmm(enc_hiddens_proj, dec_hidden.unsqueeze(-1)).squeeze(-1)
+        e_t = torch.bmm(enc_hiddens_proj, dec_hidden.unsqueeze(2)).squeeze(2)
         ### END YOUR CODE
 
         # Set e_t to -inf where enc_masks has 1
