@@ -58,4 +58,5 @@ public class AlphabetEasyPuzzle implements WorldState {
     public int hashCode() {
         return character;
     }
+    
 }
