@@ -1,21 +1,37 @@
-public class ArrayDeque {
-    public ArrayDeque(){
+public class ArrayDeque<T> {
+    public ArrayDeque() {
 
     }
 
-    public void add(){
+    public void addFirst(T item) {
 
     }
 
-    public void remove(){
+    public void addLast(T item) {
 
     }
 
-    public int get(){
+    public boolean isEmpty() {
 
     }
 
-    public int size(){
+    public int size() {
+
+    }
+
+    public void printDeque() {
+
+    }
+
+    public T removeFirst() {
+
+    }
+
+    public T removeLast() {
+
+    }
+
+    public T get(int index) {
 
     }
 }

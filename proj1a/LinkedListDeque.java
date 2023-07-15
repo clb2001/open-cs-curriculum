@@ -10,7 +10,7 @@ four improvements:
 8. Sentinel Upgrade
  */
 
-public class LinkedListDeque {
+public class LinkedListDeque<T> {
     /*
     use static means that Node class doesn't get a reference to its boss, saving us a small amount of memory
      */
@@ -18,7 +18,7 @@ public class LinkedListDeque {
         public T value;
         public Node prior;
         public Node next;
-        public Node(T x, Node prior, Node next){
+        public Node(T x, Node prior, Node next) {
             this.value = x;
             this.prior = prior;
             this.next = next;
@@ -26,38 +26,58 @@ public class LinkedListDeque {
     }
 
     private int size;
-    private LinkedListDeque head;
-    private LinkedListDeque tail;
+    private Node front;
+    private Node back;
 
-    public LinkedListDeque(){
-        this.head = null;
-        this.tail = null;
+    public LinkedListDeque() {
+        this.front = null;
+        this.back = null;
         this.size = 0;
     }
 
-    public <T> T getRecursive(int index){
-
-    }
-
-    public void ArrayDeque(){
-
-    }
-
-    public void add(){
+    public void addFirst(T item) {
         this.size += 1;
+
+        if (this.front == null) {
+            this.front = new Node(item, null, null);
+            return;
+        }
+
+        Node p = this.front;
+        Node tmp = new Node(item, null, p);
+        p.prior = tmp;
+        this.front = tmp;
     }
 
-    public void remove(){
+    public void addLast(T item) {
 
     }
 
-    public int get(){
+    public boolean isEmpty() {
 
     }
 
-    public int size(){
-        LinkedListDeque p = this;
-        LinkedListDeque q = this;
+    public int size() {
+        return this.size;
+    }
+
+    public void printDeque() {
+
+    }
+
+    public T removeFirst() {
+
+    }
+
+    public T removeLast() {
+
+    }
+
+    public T get(int index) {
+
+    }
+
+    public T getRecursive(int index) {
 
     }
 }
