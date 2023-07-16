@@ -59,7 +59,6 @@ public class LinkedListDequeTest { /* Utility method for printing out empty chec
 
 	/** Adds an item, then removes an item, and ensures that dll is empty afterwards. */
 	public static void addRemoveTest() {
-
 		System.out.println("Running add/remove test.");
 
 		LinkedListDeque<Integer> lld1 = new LinkedListDeque<Integer>();
