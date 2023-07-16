@@ -22,7 +22,8 @@ public class ArrayDeque<T> {
         } else {
             System.arraycopy(this.tmp, 0, a, 0, this.back + 1);
             System.arraycopy(this.tmp, this.front, a,
-                    (int) (this.size * factor) - (this.size - this.front), (this.size - this.front));
+                    (int) (this.size * factor) - (this.size - this.front),
+                    (this.size - this.front));
             this.front = (int) (this.size * factor) - (this.size - this.front);
         }
         this.tmp = a;
