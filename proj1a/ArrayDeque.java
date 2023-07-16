@@ -77,26 +77,50 @@ public class ArrayDeque<T> {
         if (this.length == 0) {
             return null;
         }
-        this.length -= 1;
-        T res = this.tmp[this.front];
-        this.front = (this.front + 1 + this.size) % this.size;
-        if (((double) this.length) / this.size < 0.25 && this.size >= 16) {
-            resize(0.5);
+        else if (this.length == 1) {
+            this.length -= 1;
+            T res = this.tmp[this.front];
+            this.front = 0;
+            this.back = 0;
+            if (((double) this.length) / this.size < 0.25 && this.size >= 16) {
+                resize(0.5);
+            }
+            return res;
         }
-        return res;
+        else {
+            this.length -= 1;
+            T res = this.tmp[this.front];
+            this.front = (this.front + 1 + this.size) % this.size;
+            if (((double) this.length) / this.size < 0.25 && this.size >= 16) {
+                resize(0.5);
+            }
+            return res;
+        }
     }
 
     public T removeLast() {
         if (this.length == 0) {
             return null;
         }
-        this.length -= 1;
-        T res = this.tmp[this.back];
-        this.back = (this.back - 1 + this.size) % this.size;
-        if (((double) this.length) / this.size < 0.25 && this.size >= 16) {
-            resize(0.5);
+        else if (this.length == 1) {
+            this.length -= 1;
+            T res = this.tmp[this.front];
+            this.front = 0;
+            this.back = 0;
+            if (((double) this.length) / this.size < 0.25 && this.size >= 16) {
+                resize(0.5);
+            }
+            return res;
         }
-        return res;
+        else {
+            this.length -= 1;
+            T res = this.tmp[this.back];
+            this.back = (this.back - 1 + this.size) % this.size;
+            if (((double) this.length) / this.size < 0.25 && this.size >= 16) {
+                resize(0.5);
+            }
+            return res;
+        }
     }
 
     public T get(int index) {

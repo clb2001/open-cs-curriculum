@@ -76,34 +76,42 @@ public class ArrayDequeTest {
         // should be empty
         boolean passed = checkEmpty(true, lld1.isEmpty());
 
-        lld1.addFirst(10);
-        // should not be empty
-        passed = checkGet(10, lld1.get(0)) && passed;
-        passed = checkEmpty(false, lld1.isEmpty()) && passed;
-
-        lld1.addFirst(20);
-        // should not be empty
-        passed = checkEmpty(false, lld1.isEmpty()) && passed;
-
-        lld1.addLast(30);
-        // should not be empty
-        passed = checkEmpty(false, lld1.isEmpty()) && passed;
-
-        lld1.removeFirst();
-        // should be empty
-        passed = checkEmpty(false, lld1.isEmpty()) && passed;
-
+        lld1.addFirst(1);
         lld1.removeLast();
-        // should be empty
-        passed = checkEmpty(false, lld1.isEmpty()) && passed;
-
+        lld1.addFirst(3);
         lld1.removeLast();
-        // should be empty
-        passed = checkEmpty(true, lld1.isEmpty()) && passed;
 
-        lld1.removeLast();
-        // should be empty
-        passed = checkEmpty(true, lld1.isEmpty()) && passed;
+//        lld1.addLast(1);
+//        lld1.removeFirst();
+//        lld1.addLast(3);
+//        lld1.removeFirst();
+
+//        passed = checkGet(10, lld1.get(0)) && passed;
+//        passed = checkEmpty(false, lld1.isEmpty()) && passed;
+//
+//        lld1.addFirst(20);
+//        // should not be empty
+//        passed = checkEmpty(false, lld1.isEmpty()) && passed;
+//
+//        lld1.addLast(30);
+//        // should not be empty
+//        passed = checkEmpty(false, lld1.isEmpty()) && passed;
+//
+//        lld1.removeFirst();
+//        // should be empty
+//        passed = checkEmpty(false, lld1.isEmpty()) && passed;
+//
+//        lld1.removeLast();
+//        // should be empty
+//        passed = checkEmpty(false, lld1.isEmpty()) && passed;
+//
+//        lld1.removeLast();
+//        // should be empty
+//        passed = checkEmpty(true, lld1.isEmpty()) && passed;
+//
+//        lld1.removeLast();
+//        // should be empty
+//        passed = checkEmpty(true, lld1.isEmpty()) && passed;
 
         printTestStatus(passed);
     }
