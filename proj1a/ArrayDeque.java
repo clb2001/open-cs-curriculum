@@ -17,10 +17,13 @@ public class ArrayDeque<T> {
         T[] a = (T []) new Object[(int) (this.size * factor)];
         if (this.back > this.front) {
             System.arraycopy(this.tmp, this.front, a, 0, this.back - this.front + 1);
+            this.back = this.back - this.front;
+            this.front = 0;
         }
         else {
             System.arraycopy(this.tmp, 0, a, 0, this.back + 1);
             System.arraycopy(this.tmp, this.front, a,(int) (this.size * factor) - (this.size - this.front), (this.size - this.front));
+            this.front = (int) (this.size * factor) - (this.size - this.front);
         }
         this.tmp = a;
         this.size = (int) (this.size * factor);
