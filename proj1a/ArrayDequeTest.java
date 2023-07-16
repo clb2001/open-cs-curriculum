@@ -18,6 +18,15 @@ public class ArrayDequeTest {
         return true;
     }
 
+    /* Utility method for printing out empty checks. */
+    public static boolean checkGet(int expected, int actual) {
+        if (expected != actual) {
+            System.out.println("get() returned " + actual + ", but expected: " + expected);
+            return false;
+        }
+        return true;
+    }
+
     /* Prints a nice message based on whether a test passed.
      * The \n means newline. */
     public static void printTestStatus(boolean passed) {
@@ -69,6 +78,7 @@ public class ArrayDequeTest {
 
         lld1.addFirst(10);
         // should not be empty
+        passed = checkGet(10, lld1.get(0)) && passed;
         passed = checkEmpty(false, lld1.isEmpty()) && passed;
 
         lld1.addFirst(20);
