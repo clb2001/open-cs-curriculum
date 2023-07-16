@@ -16,10 +16,10 @@ public class ArrayDeque<T> {
     private void resize(double factor) {
         T[] a = (T []) new Object[(int) (this.size * factor)];
         if (this.back > this.front) {
-            System.arraycopy(this.tmp, this.front, a, 0, this.back - this.front);
+            System.arraycopy(this.tmp, this.front, a, 0, this.back - this.front + 1);
         }
         else {
-            System.arraycopy(this.tmp, 0, a, 0, this.back);
+            System.arraycopy(this.tmp, 0, a, 0, this.back + 1);
             System.arraycopy(this.tmp, this.front, a,(int) (this.size * factor) - (this.size - this.front), (this.size - this.front));
         }
         this.tmp = a;
@@ -44,6 +44,7 @@ public class ArrayDeque<T> {
         if (this.length == 0) {
             this.length += 1;
             this.tmp[this.back] = item;
+            return;
         }
         if (this.length == this.size) {
             resize(2);
@@ -76,7 +77,7 @@ public class ArrayDeque<T> {
         this.length -= 1;
         T res = this.tmp[this.front];
         this.front = (this.front + 1 + this.size) % this.size;
-        if ((double) this.length / this.size < 0.25 && this.size >= 16) {
+        if (((double) this.length) / this.size < 0.25 && this.size >= 16) {
             resize(0.5);
         }
         return res;
@@ -89,7 +90,7 @@ public class ArrayDeque<T> {
         this.length -= 1;
         T res = this.tmp[this.back];
         this.back = (this.back - 1 + this.size) % this.size;
-        if ((double) this.length / this.size < 0.25 && this.size >= 16) {
+        if (((double) this.length) / this.size < 0.25 && this.size >= 16) {
             resize(0.5);
         }
         return res;
