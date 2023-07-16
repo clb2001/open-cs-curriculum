@@ -71,7 +71,27 @@ public class ArrayDequeTest {
         // should not be empty
         passed = checkEmpty(false, lld1.isEmpty()) && passed;
 
+        lld1.addFirst(20);
+        // should not be empty
+        passed = checkEmpty(false, lld1.isEmpty()) && passed;
+
+        lld1.addLast(30);
+        // should not be empty
+        passed = checkEmpty(false, lld1.isEmpty()) && passed;
+
         lld1.removeFirst();
+        // should be empty
+        passed = checkEmpty(false, lld1.isEmpty()) && passed;
+
+        lld1.removeLast();
+        // should be empty
+        passed = checkEmpty(false, lld1.isEmpty()) && passed;
+
+        lld1.removeLast();
+        // should be empty
+        passed = checkEmpty(true, lld1.isEmpty()) && passed;
+
+        lld1.removeLast();
         // should be empty
         passed = checkEmpty(true, lld1.isEmpty()) && passed;
 

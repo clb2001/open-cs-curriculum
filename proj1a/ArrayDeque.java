@@ -59,10 +59,10 @@ public class ArrayDeque<T> {
     }
 
     public T removeFirst() {
-        this.length -= 1;
-        if (this.size == 0) {
+        if (this.length == 0) {
             return null;
         }
+        this.length -= 1;
         T res = this.tmp[this.front];
         this.front = (this.front + 1 + this.size) % this.size;
         if ((double) this.length / this.size < 0.25 && this.size >= 16) {
@@ -72,10 +72,10 @@ public class ArrayDeque<T> {
     }
 
     public T removeLast() {
-        this.length -= 1;
-        if (this.size == 0) {
+        if (this.length == 0) {
             return null;
         }
+        this.length -= 1;
         T res = this.tmp[this.back];
         this.back = (this.back - 1 + this.size) % this.size;
         if ((double) this.length / this.size < 0.25 && this.size >= 16) {

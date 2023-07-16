@@ -8,7 +8,8 @@ four improvements:
 6. The Empty List and Sentinel Nodes
 7. Looking Back
 8. Sentinel Upgrade
-说实话，链表的题不是很好写
+说实话，链表不是很好写
+实现不好的地方，需要多写几个测试，肉眼debug会相当困难
  */
 
 public class LinkedListDeque<T> {
@@ -95,6 +96,15 @@ public class LinkedListDeque<T> {
         if (this.front == null) {
             return null;
         }
+        else if (this.front == this.back) {
+            this.size -= 1;
+            T p = this.front.value;
+            this.sentinel.next = this.sentinel;
+            this.sentinel.prior = this.sentinel;
+            this.front = null;
+            this.back = null;
+            return p;
+        }
         else {
             this.size -= 1;
             Node p = this.front;
@@ -108,6 +118,15 @@ public class LinkedListDeque<T> {
     public T removeLast() {
         if (this.back == null) {
             return null;
+        }
+        else if (this.front == this.back) {
+            this.size -= 1;
+            T p = this.front.value;
+            this.sentinel.next = this.sentinel;
+            this.sentinel.prior = this.sentinel;
+            this.front = null;
+            this.back = null;
+            return p;
         }
         else {
             this.size -= 1;
