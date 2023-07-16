@@ -19,10 +19,10 @@ public class ArrayDeque<T> {
             System.arraycopy(this.tmp, this.front, a, 0, this.back - this.front + 1);
             this.back = this.back - this.front;
             this.front = 0;
-        }
-        else {
+        } else {
             System.arraycopy(this.tmp, 0, a, 0, this.back + 1);
-            System.arraycopy(this.tmp, this.front, a,(int) (this.size * factor) - (this.size - this.front), (this.size - this.front));
+            System.arraycopy(this.tmp, this.front, a,
+                    (int) (this.size * factor) - (this.size - this.front), (this.size - this.front));
             this.front = (int) (this.size * factor) - (this.size - this.front);
         }
         this.tmp = a;
@@ -76,8 +76,7 @@ public class ArrayDeque<T> {
     public T removeFirst() {
         if (this.length == 0) {
             return null;
-        }
-        else if (this.length == 1) {
+        } else if (this.length == 1) {
             this.length -= 1;
             T res = this.tmp[this.front];
             this.front = 0;
@@ -86,8 +85,7 @@ public class ArrayDeque<T> {
                 resize(0.5);
             }
             return res;
-        }
-        else {
+        } else {
             this.length -= 1;
             T res = this.tmp[this.front];
             this.front = (this.front + 1 + this.size) % this.size;
@@ -101,8 +99,7 @@ public class ArrayDeque<T> {
     public T removeLast() {
         if (this.length == 0) {
             return null;
-        }
-        else if (this.length == 1) {
+        } else if (this.length == 1) {
             this.length -= 1;
             T res = this.tmp[this.front];
             this.front = 0;
@@ -111,8 +108,7 @@ public class ArrayDeque<T> {
                 resize(0.5);
             }
             return res;
-        }
-        else {
+        } else {
             this.length -= 1;
             T res = this.tmp[this.back];
             this.back = (this.back - 1 + this.size) % this.size;
@@ -124,6 +120,6 @@ public class ArrayDeque<T> {
     }
 
     public T get(int index) {
-        return this.tmp[index];
+        return this.tmp[(this.front + index + this.size) % this.size];
     }
 }

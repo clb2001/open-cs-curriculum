@@ -14,13 +14,14 @@ four improvements:
 
 public class LinkedListDeque<T> {
     /*
-    use static means that Node class doesn't get a reference to its boss, saving us a small amount of memory
+    use static means that Node class doesn't get a reference to its boss,
+    saving us a small amount of memory
     but if we want to use generic, we cannot define Node as static class
      */
     public class Node {
-        public T value;
-        public Node prior;
-        public Node next;
+        private T value;
+        private Node prior;
+        private Node next;
         public Node(T x, Node prior, Node next) {
             this.value = x;
             this.prior = prior;
@@ -49,8 +50,7 @@ public class LinkedListDeque<T> {
             this.sentinel.next = tmp;
             this.front = tmp;
             this.back = tmp;
-        }
-        else {
+        } else {
             Node tmp = new Node(item, this.sentinel, this.front);
             this.sentinel.next = tmp;
             this.front.prior = tmp;
@@ -66,8 +66,7 @@ public class LinkedListDeque<T> {
             this.sentinel.next = tmp;
             this.front = tmp;
             this.back = tmp;
-        }
-        else {
+        } else {
             Node tmp = new Node(item, this.back, this.sentinel);
             this.sentinel.prior = tmp;
             this.back.next = tmp;
@@ -95,8 +94,7 @@ public class LinkedListDeque<T> {
     public T removeFirst() {
         if (this.front == null) {
             return null;
-        }
-        else if (this.front == this.back) {
+        } else if (this.front == this.back) {
             this.size -= 1;
             T p = this.front.value;
             this.sentinel.next = this.sentinel;
@@ -104,8 +102,7 @@ public class LinkedListDeque<T> {
             this.front = null;
             this.back = null;
             return p;
-        }
-        else {
+        } else {
             this.size -= 1;
             Node p = this.front;
             this.sentinel.next = p.next;
@@ -118,8 +115,7 @@ public class LinkedListDeque<T> {
     public T removeLast() {
         if (this.back == null) {
             return null;
-        }
-        else if (this.front == this.back) {
+        } else if (this.front == this.back) {
             this.size -= 1;
             T p = this.front.value;
             this.sentinel.next = this.sentinel;
@@ -127,8 +123,7 @@ public class LinkedListDeque<T> {
             this.front = null;
             this.back = null;
             return p;
-        }
-        else {
+        } else {
             this.size -= 1;
             Node p = this.back;
             this.sentinel.prior = p.prior;
@@ -154,11 +149,9 @@ public class LinkedListDeque<T> {
     private T getRe(int index, int i, Node p) {
         if (p == null) {
             return null;
-        }
-        else if (i == index) {
+        } else if (i == index) {
             return p.value;
-        }
-        else {
+        } else {
             return getRe(index, i + 1, p.next);
         }
     }
@@ -166,8 +159,7 @@ public class LinkedListDeque<T> {
     public T getRecursive(int index) {
         if (index < 0 || index >= this.size) {
             return null;
-        }
-        else {
+        } else {
             Node p = this.front;
             return getRe(index, 0, p);
         }

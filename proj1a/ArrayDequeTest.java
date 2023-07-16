@@ -76,15 +76,20 @@ public class ArrayDequeTest {
         // should be empty
         boolean passed = checkEmpty(true, lld1.isEmpty());
 
-        lld1.addFirst(1);
-        lld1.removeLast();
-        lld1.addFirst(3);
-        lld1.removeLast();
+//        lld1.addFirst(1);
+//        lld1.removeLast();
+//        lld1.addFirst(3);
+//        lld1.removeLast();
 
 //        lld1.addLast(1);
 //        lld1.removeFirst();
 //        lld1.addLast(3);
 //        lld1.removeFirst();
+
+//        lld1.addLast(0);
+//        lld1.addFirst(1);
+//        lld1.addLast(2);
+//        lld1.get(0);
 
 //        passed = checkGet(10, lld1.get(0)) && passed;
 //        passed = checkEmpty(false, lld1.isEmpty()) && passed;
