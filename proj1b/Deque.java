@@ -6,4 +6,12 @@ public interface Deque<Item> {
     Item removeFirst();
 
     Item removeLast();
+
+    void addFirst(Item t);
+
+    void addLast(Item t);
+
+    int size();
+
+    boolean isEmpty();
 }
