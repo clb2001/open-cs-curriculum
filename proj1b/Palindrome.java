@@ -7,41 +7,29 @@ public class Palindrome {
         return temp;
     }
 
-    private boolean helper(String word, int begin, int end) {
-        if (begin == end) {
+    private boolean helper(Deque<Character> tmp) {
+        if (tmp.isEmpty() || tmp.size() == 1) {
             return true;
-        }
-        else if (begin > end) {
-            return false;
-        }
-        else {
-            return helper(word, begin + 1, end - 1) && (word.charAt(begin) == word.charAt(end));
+        } else {
+            return (tmp.removeFirst().equals(tmp.removeLast())) && helper(tmp);
         }
     }
 
     public boolean isPalindrome(String word) {
-        if (word.length() == 0 || word.length() == 1) {
-            return true;
-        }
-        return helper(word, 0, word.length() - 1);
+        Deque<Character> tmp = wordToDeque(word);
+        return helper(tmp);
     }
 
-    private boolean newhelper(CharacterComparator cc, String word, int begin, int end) {
-        if (begin == end) {
+    private boolean newhelper(Deque<Character> tmp, CharacterComparator cc) {
+        if (tmp.isEmpty() || tmp.size() == 1) {
             return true;
-        }
-        else if (begin > end) {
-            return false;
-        }
-        else {
-            return newhelper(cc, word, begin + 1, end - 1) && cc.equalChars(word.charAt(begin), word.charAt(end));
+        } else {
+            return cc.equalChars(tmp.removeFirst(), tmp.removeLast()) && newhelper(tmp, cc);
         }
     }
 
     public boolean isPalindrome(String word, CharacterComparator cc) {
-        if (word.length() == 0 || word.length() == 1) {
-            return true;
-        }
-        return newhelper(cc, word, 0, word.length() - 1);
+        Deque<Character> tmp = wordToDeque(word);
+        return newhelper(tmp, cc);
     }
 }

@@ -18,6 +18,8 @@ public class TestPalindrome {
 
     @Test
     public void testIsPalindrome() {
-        assertFalse(palindrome.isPalindrome("flake"));
+        OffByOne cc = new OffByOne();
+        assertTrue(palindrome.isPalindrome("AbbA"));
+        assertTrue(palindrome.isPalindrome("flke", cc));
     }
 }
