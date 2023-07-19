@@ -26,7 +26,22 @@ public class Palindrome {
         return helper(word, 0, word.length() - 1);
     }
 
-    public boolean isPalindrome(int word) {
-        return true;
+    private boolean newhelper(CharacterComparator cc, String word, int begin, int end) {
+        if (begin == end) {
+            return true;
+        }
+        else if (begin > end) {
+            return false;
+        }
+        else {
+            return newhelper(cc, word, begin + 1, end - 1) && cc.equalChars(word.charAt(begin), word.charAt(end));
+        }
+    }
+
+    public boolean isPalindrome(String word, CharacterComparator cc) {
+        if (word.length() == 0 || word.length() == 1) {
+            return true;
+        }
+        return newhelper(cc, word, 0, word.length() - 1);
     }
 }
