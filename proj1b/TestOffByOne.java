@@ -8,9 +8,14 @@ public class TestOffByOne {
 
     @Test
     public void testEqualChars() {
-        OffByOne obo = new OffByOne();
-        System.out.println(obo.equalChars('a', 'b'));
-        System.out.println(obo.equalChars('r', 'q'));
-        assertEquals(true, offByOne.equalChars('x', 'y'));
+        System.out.println('a'-'b');
+        assertTrue(offByOne.equalChars('a', 'b'));
+        assertTrue(offByOne.equalChars('&', '%'));
+        assertFalse(offByOne.equalChars('a', 'e'));
+        assertFalse(offByOne.equalChars('A', 'b'));
+        assertTrue(offByOne.equalChars('r', 'q'));
+        assertTrue(offByOne.equalChars('A', 'B'));
+        assertFalse(offByOne.equalChars('z', 'a'));
+        assertFalse(offByOne.equalChars('a', 'a'));
     }
 }
