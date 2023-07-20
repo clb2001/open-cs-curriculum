@@ -8,7 +8,7 @@ public class TestOffByOne {
 
     @Test
     public void testEqualChars() {
-        System.out.println('a'-'b');
+        System.out.println('a' - 'b');
         assertTrue(offByOne.equalChars('a', 'b'));
         assertTrue(offByOne.equalChars('&', '%'));
         assertFalse(offByOne.equalChars('a', 'e'));

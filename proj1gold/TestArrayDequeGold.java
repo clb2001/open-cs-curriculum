@@ -14,20 +14,33 @@ public class TestArrayDequeGold {
         ArrayDequeSolution<Integer> proper = new ArrayDequeSolution<>();
         StringBuilder sadLog = new StringBuilder();
 
-        for (int i = 0; i < 100; i += 1) {
-            int number = StdRandom.uniform(0, 100);
+        for (int i = 0; i < 500; i += 1) {
+            if (i % 10 == 0) {
+                sadLog.append("\n");
+                assertEquals(String.valueOf(sadLog), sad.size(), proper.size());
+            }
 
-            if (number < 25 && !proper.isEmpty()) {
+            double number = StdRandom.uniform();
+
+            if (number < 0.25) {
+                if (proper.isEmpty()) {
+                    sadLog.append("isEmpty()\n");
+                    assertTrue(String.valueOf(sadLog), sad.isEmpty());
+                }
                 Integer sadvalue = sad.removeFirst();
                 Integer propervalue = proper.removeFirst();
                 sadLog.append("removeFirst()\n");
                 assertEquals(String.valueOf(sadLog), sadvalue, propervalue);
-            } else if (number >= 25 && number < 50 && !proper.isEmpty()){
+            } else if (number >= 0.25 && number < 0.5){
+                if (proper.isEmpty()) {
+                    sadLog.append("isEmpty()\n");
+                    assertTrue(String.valueOf(sadLog), sad.isEmpty());
+                }
                 Integer sadvalue = sad.removeLast();
                 Integer propervalue = proper.removeLast();
                 sadLog.append("removeLast()\n");
                 assertEquals(String.valueOf(sadLog), sadvalue, propervalue);
-            } else if (number >= 50 && number < 75 && !proper.isEmpty()) {
+            } else if (number >= 0.5 && number < 0.75 && !proper.isEmpty()) {
                 sad.addLast(i);
                 proper.addLast(i);
                 sadLog.append("addLast(").append(i).append(")\n");
@@ -38,7 +51,7 @@ public class TestArrayDequeGold {
             }
         }
 
-        sad.printDeque();
-        proper.printDeque();
+//        sad.printDeque();
+//        proper.printDeque();
     }
 }
