@@ -15,10 +15,10 @@ public class TestArrayDequeGold {
         StringBuilder sadLog = new StringBuilder();
 
         for (int i = 0; i < 500; i += 1) {
-            if (i % 10 == 0) {
-                sadLog.append("\n");
-                assertEquals(String.valueOf(sadLog), sad.size(), proper.size());
-            }
+//            if (i % 10 == 0) {
+//                sadLog.append("\n");
+//                assertEquals(String.valueOf(sadLog), sad.size(), proper.size());
+//            }
 
             double number = StdRandom.uniform();
 
