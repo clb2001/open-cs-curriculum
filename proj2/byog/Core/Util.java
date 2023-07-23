@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
  * @author chenglibin
  */
 public class Util {
-    public long parseNumber(String input) {
+    public static long parseNumber(String input) {
         Pattern pattern = Pattern.compile("[0-9]+");
         Matcher matcher = pattern.matcher(input);
 

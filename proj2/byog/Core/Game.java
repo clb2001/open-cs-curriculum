@@ -4,10 +4,13 @@ import byog.TileEngine.TERenderer;
 import byog.TileEngine.TETile;
 import byog.Core.WorldMap;
 import byog.Core.Util;
+import byog.Core.RandomUtils;
+import byog.TileEngine.Tileset;
 
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.List;
+import java.util.Stack;
 
 //import static byog.Core.WorldMap.generateRooms;
 //import static byog.Core.WorldMap.initializeWorld;
@@ -63,10 +66,10 @@ public class Game {
         long SEED = Util.parseNumber(input);
 
         // second, we should initialize the map.
-        TETile[][] fianlWOrldFrame = generateWorld(SEED);
+        TETile[][] fianlWorldFrame = generateWorld(SEED);
 
         // finally, play the game ...
-        return fianlWOrldFrame;
+        return fianlWorldFrame;
     }
 
     public TETile[][] loadGame(String input) {
@@ -91,28 +94,79 @@ public class Game {
         return worldMap;
     }
 
+    private void initializeWorld(TETile[][] worldMap) {
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < HEIGHT; j++) {
+                worldMap[i][j] = Tileset.WALL;
+            }
+        }
+
+        for (int i = 1; i < WIDTH; i += 2) {
+            for (int j = 1; j < HEIGHT; j += 2) {
+                worldMap[i][j] = Tileset.FLOOR;
+            }
+        }
+    }
+
     private List<Room> generateRooms(TETile[][] worldMap, Random random, int roomNum) {
         Room.setRoomMaxNum(roomNum);
 
         List<Room> rooms = new ArrayList<>();
 
         for (int i = 0; i < Room.getRoomMaxNum(); i++) {
-            Room newRoom;
-
-            
+            Room newRoom = new Room();
+            while (!Room.isLegal(newRoom)) {
+                Position p1 = new Position(decideXOrY(random, 1, WIDTH - 3),
+                        decideXOrY(random, 1, HEIGHT - 3));
+                Position p2 = new Position(decideXOrY(random, p1.getX(), WIDTH - 1),
+                        decideXOrY(random, p1.getY(), HEIGHT - 1));
+                newRoom = new Room(p1, p2);
+            }
+            if (!newRoom.isOverlapped(rooms)) {
+                rooms.add(newRoom);
+                i++;
+                newRoom.drawRoom(worldMap, Tileset.GRASS);
+            }
         }
         return rooms;
     }
 
-    private void generateConnector(TETile[][] worldMap, Random random) {
-    }
-
     private void generateHalls(TETile[][] worldMap, Random random) {
+        // DFS
+        Stack<Position> stack = new Stack<>();
+        Position startPoint = decideStartPoint(random, worldMap);
+        startPoint.drawTile(worldMap, Tileset.FLOOR);
+        stack.push(startPoint);
+        while (!stack.isEmpty()) {
+            Position top = stack.peek();
+            Connector conn = nextConnector(random, top, worldMap);
+            if (conn == null) {
+                stack.pop();
+                continue;
+            }
+            conn.getGoalPos().drawTile(worldMap, Tileset.FLOOR);
+            conn.connect(worldMap, Tileset.FLOOR);
+            stack.push(conn.getGoalPos());
+        }
     }
 
-    private void initializeWorld(TETile[][] worldMap) {
+    private void generateConnector(TETile[][] worldMap, Random random) {
 
     }
 
+    private int decideXOrY(Random r, int start, int end) {
+        int x = RandomUtils.uniform(r, start);
+        if (x % 2 == 0) {
+            if (RandomUtils.bernoulli(r)) {
+                x++;
+            } else {
+                x--;
+            }
+        }
+        return x;
+    }
 
+    private Position decideStartPoint(Random random, TETile[][] worldMap) {
+
+    }
 }

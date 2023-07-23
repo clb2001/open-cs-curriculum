@@ -139,4 +139,8 @@ public class Position implements Serializable {
             return Direction.DOWN;
         }
     }
+
+    public void drawTile(TETile[][] world, TETile t) {
+        world[x][y] = t;
+    }
 }
