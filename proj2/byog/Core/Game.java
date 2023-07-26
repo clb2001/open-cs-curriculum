@@ -171,9 +171,14 @@ public class Game {
     }
 
     private Connector nextConnector(Random random, Position p, TETile[][] world) {
-        List<Connector> possibleCOnnectors = new ArrayList<>();
+        List<Connector> possibleConnectors = new ArrayList<>();
         for (Direction d: Direction.values()) {
-            Connector.addConnectableDirection(possibleCOnnectors, world, Tileset.GRASS, d, p, WIDTH, HEIGHT);
+            Connector.addConnectableDirection(possibleConnectors, world, Tileset.GRASS, d, p, WIDTH, HEIGHT);
         }
+        if (possibleConnectors.isEmpty()) {
+            return null;
+        }
+        int selector = RandomUtils.uniform(random, 0, possibleConnectors.size());
+        return possibleConnectors.get(selector);
     }
 }
