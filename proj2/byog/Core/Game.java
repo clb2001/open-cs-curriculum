@@ -167,6 +167,13 @@ public class Game {
     }
 
     private Position decideStartPoint(Random random, TETile[][] worldMap) {
+        return null;
+    }
 
+    private Connector nextConnector(Random random, Position p, TETile[][] world) {
+        List<Connector> possibleCOnnectors = new ArrayList<>();
+        for (Direction d: Direction.values()) {
+            Connector.addConnectableDirection(possibleCOnnectors, world, Tileset.GRASS, d, p, WIDTH, HEIGHT);
+        }
     }
 }

@@ -15,4 +15,6 @@ public class Connector {
         this.goalPos = goalPos;
         this.direction = direction;
     }
+
+    public void connect()
 }
