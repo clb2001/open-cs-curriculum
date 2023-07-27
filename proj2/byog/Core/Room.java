@@ -2,6 +2,7 @@ package byog.Core;
 
 import byog.TileEngine.TETile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Room {
@@ -70,6 +71,13 @@ public class Room {
             for (int j = bottomLeft.getY(); j < upRight.getY(); j++) {
                 world[i][j] = t;
             }
+        }
+    }
+
+    public List<Connector> findConnectors(TETile[][] world, int width, int height) {
+        List<Connector> res = new ArrayList<>();
+        for (int i = bottomLeft.getX(); i <= upRight.getX(); i++) {
+            
         }
     }
 }

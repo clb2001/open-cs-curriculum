@@ -90,7 +90,7 @@ public class Game {
         generateHalls(worldMap, RANDOM);
 
         // step 4: generator the connectors
-        generateConnector(worldMap, RANDOM);
+        generateConnector(worldMap, RANDOM, rooms);
         return worldMap;
     }
 
@@ -135,7 +135,9 @@ public class Game {
         // DFS
         Stack<Position> stack = new Stack<>();
         Position startPoint = decideStartPoint(random, worldMap);
-        startPoint.drawTile(worldMap, Tileset.FLOOR);
+        if (startPoint != null) {
+            startPoint.drawTile(worldMap, Tileset.FLOOR);
+        }
         stack.push(startPoint);
         while (!stack.isEmpty()) {
             Position top = stack.peek();
@@ -150,8 +152,10 @@ public class Game {
         }
     }
 
-    private void generateConnector(TETile[][] worldMap, Random random) {
-
+    private void generateConnector(TETile[][] worldMap, Random random, List<Room> rooms) {
+        for (Room room: rooms) {
+            List<Connector> connectors = room.findConnectors(worldMap, WIDTH, HEIGHT);
+        }
     }
 
     private int decideXOrY(Random r, int start, int end) {
