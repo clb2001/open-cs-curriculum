@@ -77,7 +77,8 @@ public class Room {
     public List<Connector> findConnectors(TETile[][] world, int width, int height) {
         List<Connector> res = new ArrayList<>();
         for (int i = bottomLeft.getX(); i <= upRight.getX(); i++) {
-            
+            i += 1;
         }
+        return null;
     }
 }
