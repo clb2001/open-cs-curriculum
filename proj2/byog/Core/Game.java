@@ -80,11 +80,11 @@ public class Game {
         TETile[][] worldMap = new TETile[WIDTH][HEIGHT];
 
         // step 1: initialize the world map
-        initializeWorld(worldMap);
+        WorldMap.initializeWorld(worldMap);
         final Random RANDOM = new Random(SEED);
 
         // step 2: generate the rooms
-        List<Room> rooms = generateRooms(worldMap, RANDOM, 10);
+        List<Room> rooms = WorldMap.generateRooms(worldMap, RANDOM, 10);
 
         // step 3: generate the hallways
         generateHalls(worldMap, RANDOM);
@@ -94,42 +94,42 @@ public class Game {
         return worldMap;
     }
 
-    private void initializeWorld(TETile[][] worldMap) {
-        for (int i = 0; i < WIDTH; i++) {
-            for (int j = 0; j < HEIGHT; j++) {
-                worldMap[i][j] = Tileset.WALL;
-            }
-        }
+//    private void initializeWorld(TETile[][] worldMap) {
+//        for (int i = 0; i < WIDTH; i++) {
+//            for (int j = 0; j < HEIGHT; j++) {
+//                worldMap[i][j] = Tileset.WALL;
+//            }
+//        }
+//
+//        for (int i = 1; i < WIDTH; i += 2) {
+//            for (int j = 1; j < HEIGHT; j += 2) {
+//                worldMap[i][j] = Tileset.FLOOR;
+//            }
+//        }
+//    }
 
-        for (int i = 1; i < WIDTH; i += 2) {
-            for (int j = 1; j < HEIGHT; j += 2) {
-                worldMap[i][j] = Tileset.FLOOR;
-            }
-        }
-    }
-
-    private List<Room> generateRooms(TETile[][] worldMap, Random random, int roomNum) {
-        Room.setRoomMaxNum(roomNum);
-
-        List<Room> rooms = new ArrayList<>();
-
-        for (int i = 0; i < Room.getRoomMaxNum(); i++) {
-            Room newRoom = new Room();
-            while (!Room.isLegal(newRoom)) {
-                Position p1 = new Position(decideXOrY(random, 1, WIDTH - 3),
-                        decideXOrY(random, 1, HEIGHT - 3));
-                Position p2 = new Position(decideXOrY(random, p1.getX(), WIDTH - 1),
-                        decideXOrY(random, p1.getY(), HEIGHT - 1));
-                newRoom = new Room(p1, p2);
-            }
-            if (!newRoom.isOverlapped(rooms)) {
-                rooms.add(newRoom);
-                i++;
-                newRoom.drawRoom(worldMap, Tileset.GRASS);
-            }
-        }
-        return rooms;
-    }
+//    private List<Room> generateRooms(TETile[][] worldMap, Random random, int roomNum) {
+//        Room.setRoomMaxNum(roomNum);
+//
+//        List<Room> rooms = new ArrayList<>();
+//
+//        for (int i = 0; i < Room.getRoomMaxNum(); i++) {
+//            Room newRoom = new Room();
+//            while (!Room.isLegal(newRoom)) {
+//                Position p1 = new Position(decideXOrY(random, 1, WIDTH - 3),
+//                        decideXOrY(random, 1, HEIGHT - 3));
+//                Position p2 = new Position(decideXOrY(random, p1.getX(), WIDTH - 1),
+//                        decideXOrY(random, p1.getY(), HEIGHT - 1));
+//                newRoom = new Room(p1, p2);
+//            }
+//            if (!newRoom.isOverlapped(rooms)) {
+//                rooms.add(newRoom);
+//                i++;
+//                newRoom.drawRoom(worldMap, Tileset.GRASS);
+//            }
+//        }
+//        return rooms;
+//    }
 
     private void generateHalls(TETile[][] worldMap, Random random) {
         // DFS

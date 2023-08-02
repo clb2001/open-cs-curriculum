@@ -2,9 +2,14 @@ package byog.Core;
 
 import byog.TileEngine.TERenderer;
 import byog.TileEngine.TETile;
+import byog.TileEngine.Tileset;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import static byog.Core.Game.HEIGHT;
+import static byog.Core.Game.WIDTH;
 
 /**
  * @author chenglibin
@@ -16,8 +21,19 @@ public class WorldMap {
      * five steps
      * step 0: initialzie the world
      */
-    public void initializeWorld(TETile[][] worldMap) {
-        return;
+    public static void initializeWorld(TETile[][] worldMap) {
+
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < HEIGHT; j++) {
+                worldMap[i][j] = Tileset.WALL;
+            }
+        }
+
+        for (int i = 1; i < WIDTH; i += 2) {
+            for (int j = 1; j < HEIGHT; j += 2) {
+                worldMap[i][j] = Tileset.FLOOR;
+            }
+        }
     }
 
     /*
@@ -25,8 +41,27 @@ public class WorldMap {
      * overlaps an existing room, it is discarded. Any remaining rooms are
      * carved out.
      */
-    public List<Room> generateRooms(TETile[][] worldMap, Random RANDOM, int roomNum) {
-        return null;
+    public static List<Room> generateRooms(TETile[][] worldMap, Random RANDOM, int roomNum) {
+        Room.setRoomMaxNum(roomNum);
+
+        List<Room> rooms = new ArrayList<>();
+
+        for (int i = 0; i < Room.getRoomMaxNum(); i++) {
+            Room newRoom = new Room();
+            while (!Room.isLegal(newRoom)) {
+                Position p1 = new Position(decideXOrY(RANDOM, 1, WIDTH - 3),
+                        decideXOrY(RANDOM, 1, HEIGHT - 3));
+                Position p2 = new Position(decideXOrY(RANDOM, p1.getX(), WIDTH - 1),
+                        decideXOrY(RANDOM, p1.getY(), HEIGHT - 1));
+                newRoom = new Room(p1, p2);
+            }
+            if (!newRoom.isOverlapped(rooms)) {
+                rooms.add(newRoom);
+                i++;
+                newRoom.drawRoom(worldMap, Tileset.GRASS);
+            }
+        }
+        return rooms;
     }
 
 
@@ -55,4 +90,19 @@ public class WorldMap {
      * repeatedly filling in any open tile that's closed on three sides. When
      * this is done, every corridor in a maze actually leads somewhere.
      */
+
+    /*
+     * other methods
+     */
+    private static int decideXOrY(Random r, int start, int end) {
+        int x = RandomUtils.uniform(r, start);
+        if (x % 2 == 0) {
+            if (RandomUtils.bernoulli(r)) {
+                x++;
+            } else {
+                x--;
+            }
+        }
+        return x;
+    }
 }
