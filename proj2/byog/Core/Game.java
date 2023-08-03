@@ -12,9 +12,6 @@ import java.util.Random;
 import java.util.List;
 import java.util.Stack;
 
-//import static byog.Core.WorldMap.generateRooms;
-//import static byog.Core.WorldMap.initializeWorld;
-
 /**
  * @author chenglibin
  */

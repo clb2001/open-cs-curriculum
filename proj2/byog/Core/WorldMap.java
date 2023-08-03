@@ -175,5 +175,5 @@ public class WorldMap {
         int selector = RandomUtils.uniform(random, 0, possibleConnectors.size());
         return possibleConnectors.get(selector);
     }
-    
+
 }
