@@ -87,10 +87,10 @@ public class Game {
         List<Room> rooms = WorldMap.generateRooms(worldMap, RANDOM, 10);
 
         // step 3: generate the hallways
-        generateHalls(worldMap, RANDOM);
+        WorldMap.generateHalls(worldMap, RANDOM);
 
         // step 4: generator the connectors
-        generateConnector(worldMap, RANDOM, rooms);
+        WorldMap.generateConnector(worldMap, RANDOM, rooms);
         return worldMap;
     }
 
@@ -131,58 +131,86 @@ public class Game {
 //        return rooms;
 //    }
 
-    private void generateHalls(TETile[][] worldMap, Random random) {
-        // DFS
-        Stack<Position> stack = new Stack<>();
-        Position startPoint = decideStartPoint(random, worldMap);
-        if (startPoint != null) {
-            startPoint.drawTile(worldMap, Tileset.FLOOR);
-        }
-        stack.push(startPoint);
-        while (!stack.isEmpty()) {
-            Position top = stack.peek();
-            Connector conn = nextConnector(random, top, worldMap);
-            if (conn == null) {
-                stack.pop();
-                continue;
-            }
-            conn.getGoalPos().drawTile(worldMap, Tileset.FLOOR);
-            conn.connect(worldMap, Tileset.FLOOR);
-            stack.push(conn.getGoalPos());
-        }
-    }
+//    private void generateHalls(TETile[][] worldMap, Random random) {
+//        // DFS
+//        Stack<Position> stack = new Stack<>();
+//        Position startPoint = decideStartPoint(random, worldMap);
+//        if (startPoint != null) {
+//            startPoint.drawTile(worldMap, Tileset.FLOOR);
+//        }
+//        stack.push(startPoint);
+//        while (!stack.isEmpty()) {
+//            Position top = stack.peek();
+//            Connector conn = nextConnector(random, top, worldMap);
+//            if (conn == null) {
+//                stack.pop();
+//                continue;
+//            }
+//            conn.getGoalPos().drawTile(worldMap, Tileset.FLOOR);
+//            conn.connect(worldMap, Tileset.FLOOR);
+//            stack.push(conn.getGoalPos());
+//        }
+//    }
 
-    private void generateConnector(TETile[][] worldMap, Random random, List<Room> rooms) {
-        for (Room room: rooms) {
-            List<Connector> connectors = room.findConnectors(worldMap, WIDTH, HEIGHT);
-        }
-    }
+//    private void generateConnector(TETile[][] worldMap, Random random, List<Room> rooms) {
+//        for (Room room: rooms) {
+//            List<Connector> connectors = room.findConnectors(worldMap, WIDTH, HEIGHT);
+//        }
+//    }
 
-    private int decideXOrY(Random r, int start, int end) {
-        int x = RandomUtils.uniform(r, start);
-        if (x % 2 == 0) {
-            if (RandomUtils.bernoulli(r)) {
-                x++;
-            } else {
-                x--;
-            }
-        }
-        return x;
-    }
-
-    private Position decideStartPoint(Random random, TETile[][] worldMap) {
-        return null;
-    }
-
-    private Connector nextConnector(Random random, Position p, TETile[][] world) {
-        List<Connector> possibleConnectors = new ArrayList<>();
-        for (Direction d: Direction.values()) {
-            Connector.addConnectableDirection(possibleConnectors, world, Tileset.GRASS, d, p, WIDTH, HEIGHT);
-        }
-        if (possibleConnectors.isEmpty()) {
-            return null;
-        }
-        int selector = RandomUtils.uniform(random, 0, possibleConnectors.size());
-        return possibleConnectors.get(selector);
-    }
+//    private int decideXOrY(Random r, int start, int end) {
+//        int x = RandomUtils.uniform(r, start);
+//        if (x % 2 == 0) {
+//            if (RandomUtils.bernoulli(r)) {
+//                x++;
+//            } else {
+//                x--;
+//            }
+//        }
+//        return x;
+//    }
+//
+//    private Position decideStartPoint(Random random, TETile[][] worldMap) {
+//        Position p = new Position();
+//        int selector = RandomUtils.uniform(random, 0, 4);
+//        switch (selector) {
+//            case 0:
+//                p.setX(1);
+//                do {
+//                    p.setX(decideXOrY(random, 1, HEIGHT - 1));
+//                } while (p.isTile(worldMap, Tileset.FLOOR));
+//                break;
+//            case 1:
+//                p.setY(1);
+//                do {
+//                    p.setX(decideXOrY(random, 1, WIDTH - 1));
+//                } while (p.isTile(worldMap, Tileset.FLOOR));
+//                break;
+//            case 2:
+//                p.setX(WIDTH - 2);
+//                do {
+//                    p.setX(decideXOrY(random, 1, HEIGHT - 1));
+//                } while (p.isTile(worldMap, Tileset.FLOOR));
+//                break;
+//            default:
+//                p.setY(HEIGHT - 2);
+//                do {
+//                    p.setY(decideXOrY(random, 1, WIDTH - 1));
+//                } while (p.isTile(worldMap, Tileset.FLOOR));
+//                break;
+//        }
+//        return p;
+//    }
+//
+//    private Connector nextConnector(Random random, Position p, TETile[][] world) {
+//        List<Connector> possibleConnectors = new ArrayList<>();
+//        for (Direction d: Direction.values()) {
+//            Connector.addConnectableDirection(possibleConnectors, world, Tileset.GRASS, d, p, WIDTH, HEIGHT);
+//        }
+//        if (possibleConnectors.isEmpty()) {
+//            return null;
+//        }
+//        int selector = RandomUtils.uniform(random, 0, possibleConnectors.size());
+//        return possibleConnectors.get(selector);
+//    }
 }
