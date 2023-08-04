@@ -25,6 +25,31 @@ public class Game {
      * Method used for playing a fresh game. The game should start from the main menu.
      */
     public void playWithKeyboard() {
+        drawStartUI();
+        char firstChar = getFirstChar();
+        if (firstChar == 'n') {
+            newGame();
+        } else if (firstChar == 'l') {
+            loadGame();
+        } else {
+            System.exit(0);
+        }
+    }
+
+    public void drawStartUI() {
+
+    }
+
+    public char getFirstChar() {
+        return 'a';
+    }
+
+    public void newGame() {
+
+    }
+
+    public void loadGame() {
+
     }
 
     /**
