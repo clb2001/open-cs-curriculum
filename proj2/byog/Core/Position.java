@@ -3,7 +3,6 @@ package byog.Core;
 import byog.TileEngine.TETile;
 import byog.TileEngine.Tileset;
 
-import javax.swing.plaf.PanelUI;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,12 +92,13 @@ public class Position implements Serializable {
                     }
                     break;
             }
+            return true;
         }
         return false;
     }
 
-    public boolean isTile(TETile[][] world, TETile t) {
-        return world[x][y] == t;
+    public boolean isTile(TETile[][] worldMap, TETile t) {
+        return worldMap[x][y].equals(t);
     }
 
     private List<Position> getAroundPosition(int width, int height, boolean isAll) {
@@ -126,7 +126,7 @@ public class Position implements Serializable {
                 res.add(new Position(x - 1, y + 1));
             }
             if (x - 1 >= 0 && y - 1 >= 0) {
-                res.add(new Position(x - 1, y + 1));
+                res.add(new Position(x - 1, y - 1));
             }
         }
         return res;
@@ -144,7 +144,51 @@ public class Position implements Serializable {
         }
     }
 
+    public boolean isDeadEnd(TETile[][] worldMap, int width, int height) {
+        if (!isTile(worldMap, Tileset.FLOOR)) {
+            return false;
+        }
+        int num = 0;
+        for (Position p: getAroundPosition(width, height, false)) {
+            if (p.isTile(worldMap, Tileset.WALL)) {
+                num++;
+            }
+        }
+        return num == 3;
+    }
+
+    public void carveDeadEnd(TETile[][] worldMap, int width, int height) {
+        drawTile(worldMap, Tileset.WALL);
+        for (Position p: getAroundPosition(width, height, false)) {
+            if (p.isDeadEnd(worldMap, width, height)) {
+                p.carveDeadEnd(worldMap, width, height);
+            }
+        }
+    }
+
+    public boolean isSolidWall(TETile[][] worldMap, int width, int height) {
+        if (!isTile(worldMap, Tileset.WALL)) {
+            return false;
+        }
+        for (Position p: getAroundPosition(width, height, true)) {
+            if (!p.isTile(worldMap, Tileset.WALL)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void drawTile(TETile[][] world, TETile t) {
         world[x][y] = t;
+    }
+
+    public void drawInitialPerson(TETile[][] worldMap, int width, int height) {
+        for (Position p: getAroundPosition(width, height, false)) {
+            if (p.isTile(worldMap, Tileset.FLOOR)) {
+                p.drawTile(worldMap, Tileset.PLAYER);
+                Player.setPos(p);
+                return;
+            }
+        }
     }
 }

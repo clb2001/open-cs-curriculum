@@ -1,6 +1,5 @@
 package byog.Core;
 
-import byog.TileEngine.TERenderer;
 import byog.TileEngine.TETile;
 import byog.TileEngine.Tileset;
 
@@ -45,7 +44,7 @@ public class WorldMap {
     public static List<Room> generateRooms(TETile[][] worldMap, Random random, int roomNum) {
         Room.setRoomMaxNum(roomNum);
         List<Room> rooms = new ArrayList<>();
-        for (int i = 0; i < Room.getRoomMaxNum(); i++) {
+        for (int i = 0; i < Room.getRoomMaxNum();) {
             Room newRoom;
             do {
                 Position p1 = new Position(decideXOrY(random, 1, WIDTH - 3),
@@ -120,12 +119,31 @@ public class WorldMap {
      * chance to carve a connector between two already-joined regions, so that
      * the dungeon isn't single connected.
      */
-    public static void carveDeadEnds(TETile[][] WorldMap) {
-        return;
+    public static void carveDeadEnds(TETile[][] worldMap) {
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < HEIGHT; j++) {
+                Position p = new Position(i, j);
+                if (p.isDeadEnd(worldMap, WIDTH, HEIGHT)) {
+                    p.carveDeadEnd(worldMap, WIDTH, HEIGHT);
+                }
+            }
+        }
     }
 
-    public static void carveExtraWalls(TETile[][] WorldMap) {
-        return;
+    public static void carveExtraWalls(TETile[][] worldMap) {
+        List<Position> solidWalls = new ArrayList<>();
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < HEIGHT; j++) {
+                Position p = new Position(i, j);
+                if (p.isSolidWall(worldMap, WIDTH, HEIGHT)) {
+                    solidWalls.add(p);
+                }
+            }
+        }
+
+        for (Position p: solidWalls) {
+            p.drawTile(worldMap, Tileset.NOTHING);
+        }
     }
 
     /*
@@ -133,9 +151,21 @@ public class WorldMap {
      * repeatedly filling in any open tile that's closed on three sides. When
      * this is done, every corridor in a maze actually leads somewhere.
      */
-    public static void addDoorAndInitialPlayer(TETile[][] WorldMap, Random random) {
-        return;
-    }
+    public static void addDoorAndInitialPlayer(TETile[][] worldMap, Random random) {
+        List<Position> edges = new ArrayList<>();
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < HEIGHT; j++) {
+                Position p = new Position(i, j);
+                if (p.isEdge(worldMap, WIDTH, HEIGHT)) {
+                    edges.add(p);
+                }
+            }
+        }
+        int selector = RandomUtils.uniform(random, 0, edges.size());
+        Position selected = edges.get(selector);
+        selected.drawTile(worldMap, Tileset.LOCKED_DOOR);
+        selected.drawInitialPerson(worldMap, WIDTH, HEIGHT);
+     }
 
     /*
      * other methods()

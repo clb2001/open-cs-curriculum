@@ -65,6 +65,9 @@ public class Room {
     }
 
     public boolean isOverlapped(List<Room> rooms) {
+        if (rooms.isEmpty()) {
+            return false;
+        }
         for (Room room : rooms) {
             if (this.isOverlapped(room)) {
                 return true;
