@@ -106,10 +106,10 @@ public class RandomDungeonGenerator {
         }
 
         boolean intersects(int otherX, int otherY, int otherWidth, int otherHeight) {
-            return (x < otherX + otherWidth &&
-                    x + width > otherX &&
-                    y < otherY + otherHeight &&
-                    y + height > otherY);
+            return (x < otherX + otherWidth
+                    && x + width > otherX
+                    && y < otherY + otherHeight
+                    && y + height > otherY);
         }
 
         int centerX() {

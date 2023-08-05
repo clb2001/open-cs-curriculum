@@ -42,20 +42,20 @@ public class WorldMap {
      * overlaps an existing room, it is discarded. Any remaining rooms are
      * carved out.
      */
-    public static List<Room> generateRooms(TETile[][] worldMap, Random RANDOM, int roomNum) {
+    public static List<Room> generateRooms(TETile[][] worldMap, Random random, int roomNum) {
         Room.setRoomMaxNum(roomNum);
 
         List<Room> rooms = new ArrayList<>();
 
         for (int i = 0; i < Room.getRoomMaxNum(); i++) {
-            Room newRoom = new Room();
-            while (!Room.isLegal(newRoom)) {
-                Position p1 = new Position(decideXOrY(RANDOM, 1, WIDTH - 3),
-                        decideXOrY(RANDOM, 1, HEIGHT - 3));
-                Position p2 = new Position(decideXOrY(RANDOM, p1.getX(), WIDTH - 1),
-                        decideXOrY(RANDOM, p1.getY(), HEIGHT - 1));
+            Room newRoom;
+            do {
+                Position p1 = new Position(decideXOrY(random, 1, WIDTH - 3),
+                        decideXOrY(random, 1, HEIGHT - 3));
+                Position p2 = new Position(decideXOrY(random, p1.getX() + 1, WIDTH - 1),
+                        decideXOrY(random, p1.getY() + 1, HEIGHT - 1));
                 newRoom = new Room(p1, p2);
-            }
+            } while (!Room.isLegal(newRoom));
             if (!newRoom.isOverlapped(rooms)) {
                 rooms.add(newRoom);
                 i++;
@@ -121,7 +121,7 @@ public class WorldMap {
      * other methods()
      */
     private static int decideXOrY(Random r, int start, int end) {
-        int x = RandomUtils.uniform(r, start);
+        int x = RandomUtils.uniform(r, start, end);
         if (x % 2 == 0) {
             if (RandomUtils.bernoulli(r)) {
                 x++;
@@ -167,7 +167,8 @@ public class WorldMap {
     private static Connector nextConnector(Random random, Position p, TETile[][] world) {
         List<Connector> possibleConnectors = new ArrayList<>();
         for (Direction d: Direction.values()) {
-            Connector.addConnectableDirection(possibleConnectors, world, Tileset.GRASS, d, p, WIDTH, HEIGHT);
+            Connector.addConnectableDirection(possibleConnectors, world, Tileset.GRASS,
+                    d, p, WIDTH, HEIGHT);
         }
         if (possibleConnectors.isEmpty()) {
             return null;

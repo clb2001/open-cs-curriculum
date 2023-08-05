@@ -38,7 +38,8 @@ public class Connector {
     }
 
     public static void addConnectableDirection(List<Connector> l, TETile[][] world,
-                                               TETile t, Direction d, Position p, int width, int height) {
+                                               TETile t, Direction d, Position p,
+                                               int width, int height) {
         switch (d) {
             case RIGHT:
                 if (p.getX() + 2 < width && world[p.getX() + 2][p.getY()].equals(t)) {

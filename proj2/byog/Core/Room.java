@@ -5,6 +5,9 @@ import byog.TileEngine.TETile;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author chenglibin
+ */
 public class Room {
     private Position bottomLeft;
     private Position upRight;
@@ -12,7 +15,9 @@ public class Room {
     private static int roomMaxWidth = 8;
     private static int roomMaxHeight = 6;
 
-    public Room() {}
+    public Room() {
+
+    }
 
     public Room(Position bottomLeft, Position upRight) {
         this.bottomLeft = bottomLeft;
@@ -28,7 +33,8 @@ public class Room {
     }
 
     public Position getCentralPos() {
-        return new Position((upRight.getX() + bottomLeft.getX()) / 2, (upRight.getY() + bottomLeft.getY()) / 2);
+        return new Position((upRight.getX() + bottomLeft.getX()) / 2,
+                (upRight.getY() + bottomLeft.getY()) / 2);
     }
 
     public static void setRoomMaxNum(int roomMaxNum) {
@@ -40,8 +46,8 @@ public class Room {
     }
 
     public static boolean isLegal(Room r) {
-        boolean isXLegal = (r.bottomLeft.getX() != r.bottomLeft.getX());
-        boolean isYLegal = (r.bottomLeft.getY() != r.bottomLeft.getY());
+        boolean isXLegal = (r.bottomLeft.getX() != r.upRight.getX());
+        boolean isYLegal = (r.bottomLeft.getY() != r.upRight.getY());
         boolean isWidthLegal = (r.getWidth() < Room.roomMaxWidth);
         boolean isHeightLegal = (r.getHeight() < Room.roomMaxHeight);
         return isXLegal && isYLegal && isWidthLegal && isHeightLegal;
@@ -52,9 +58,9 @@ public class Room {
         Position object2 = r.getCentralPos();
         int absX = Math.abs(object2.getX() - object1.getX());
         int absY = Math.abs(object2.getY() - object1.getY());
-        boolean XOver = (absX <= (getWidth() + r.getWidth()) / 2);
-        boolean YOver = (absY <= (getHeight() + r.getHeight()) / 2);
-        return XOver && YOver;
+        boolean xOver = (absX <= (getWidth() + r.getWidth()) / 2);
+        boolean yOver = (absY <= (getHeight() + r.getHeight()) / 2);
+        return xOver && yOver;
     }
 
     public boolean isOverlapped(List<Room> rooms) {
@@ -68,7 +74,7 @@ public class Room {
 
     public void drawRoom(TETile[][] world, TETile t) {
         for (int i = bottomLeft.getX(); i <= upRight.getX(); i++) {
-            for (int j = bottomLeft.getY(); j < upRight.getY(); j++) {
+            for (int j = bottomLeft.getY(); j <= upRight.getY(); j++) {
                 world[i][j] = t;
             }
         }

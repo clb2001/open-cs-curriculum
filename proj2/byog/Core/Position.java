@@ -51,7 +51,7 @@ public class Position implements Serializable {
 
         // get the floor(maybe one, maybe zero)
         for (Position p: getAroundPosition(width, height, false)) {
-            if (p.isTile(world, Tileset.FLOOR)){
+            if (p.isTile(world, Tileset.FLOOR)) {
                 num++;
                 pos = p;
             }
@@ -81,8 +81,8 @@ public class Position implements Serializable {
                             return false;
                         }
                     }
-                case UP:
-                    for (int i = y -1; i >= 0; i--) {
+                default:
+                    for (int i = y - 1; i >= 0; i--) {
                         Position p = new Position(x, i);
                         if (!p.isTile(world, Tileset.NOTHING)) {
                             return false;

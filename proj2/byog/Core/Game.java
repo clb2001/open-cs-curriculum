@@ -85,34 +85,37 @@ public class Game {
 
     public TETile[][] newGame(String input) {
         // first, we should get the random seed.
-        long SEED = Util.parseNumber(input);
+        long seed = Util.parseNumber(input);
 
         // second, we should initialize the map.
-        TETile[][] fianlWorldFrame = generateWorld(SEED);
+        TETile[][] finalWorldFrame = generateWorld(seed);
 
         // finally, play the game ...
-        return fianlWorldFrame;
+        // TODO
+
+        return finalWorldFrame;
     }
 
     public TETile[][] loadGame(String input) {
         return null;
     }
 
-    public TETile[][] generateWorld(long SEED) {
+    public TETile[][] generateWorld(long seed) {
         TETile[][] worldMap = new TETile[WIDTH][HEIGHT];
 
         // step 1: initialize the world map
         WorldMap.initializeWorld(worldMap);
-        final Random RANDOM = new Random(SEED);
+        final Random random = new Random(seed);
 
         // step 2: generate the rooms
-        List<Room> rooms = WorldMap.generateRooms(worldMap, RANDOM, 10);
+        List<Room> rooms = WorldMap.generateRooms(worldMap, random, 10);
 
         // step 3: generate the hallways
-        WorldMap.generateHalls(worldMap, RANDOM);
+        WorldMap.generateHalls(worldMap, random);
 
         // step 4: generator the connectors
-        WorldMap.generateConnector(worldMap, RANDOM, rooms);
+        WorldMap.generateConnector(worldMap, random, rooms);
+
         return worldMap;
     }
 
