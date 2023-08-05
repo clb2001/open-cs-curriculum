@@ -1,5 +1,9 @@
 package byog.Core;
 
-enum Direction {
-    UP, DOWN, LEFT, RIGHT;
+/**
+ * @author chenglibin
+ */
+
+public enum Direction {
+    UP, DOWN, RIGHT, LEFT;
 }

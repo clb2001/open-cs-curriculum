@@ -1,11 +1,13 @@
 package byog.Core;
 
-import java.util.List;
-
 import byog.TileEngine.TETile;
 
-public class Connector {
+import java.util.List;
 
+/**
+ * @author chenglibin
+ */
+public class Connector {
     private Position goalPos;
     private Direction direction;
 
@@ -14,8 +16,30 @@ public class Connector {
         this.direction = direction;
     }
 
-    public static void addConnectableDirection(List<Connector> l, TETile[][] world, TETile t,
-            Direction d, Position p, int width, int height) {
+    public Position getGoalPos() {
+        return goalPos;
+    }
+
+    public void connect(TETile[][] world, TETile t) {
+        switch (direction) {
+            case RIGHT:
+                world[goalPos.getX() + 1][goalPos.getY()] = t;
+                break;
+            case LEFT:
+                world[goalPos.getX() - 1][goalPos.getY()] = t;
+                break;
+            case UP:
+                world[goalPos.getX()][goalPos.getY() - 1] = t;
+                break;
+            default:
+                world[goalPos.getX()][goalPos.getY() + 1] = t;
+                break;
+        }
+    }
+
+    public static void addConnectableDirection(List<Connector> l, TETile[][] world,
+                                               TETile t, Direction d, Position p,
+                                               int width, int height) {
         switch (d) {
             case RIGHT:
                 if (p.getX() + 2 < width && world[p.getX() + 2][p.getY()].equals(t)) {
@@ -43,26 +67,4 @@ public class Connector {
                 break;
         }
     }
-
-    public void connect(TETile[][] world, TETile t) {
-        switch (direction) {
-            case RIGHT:
-                world[goalPos.getX() - 1][goalPos.getY()] = t;
-                break;
-            case LEFT:
-                world[goalPos.getX() + 1][goalPos.getY()] = t;
-                break;
-            case UP:
-                world[goalPos.getX()][goalPos.getY() - 1] = t;
-                break;
-            default:
-                world[goalPos.getX()][goalPos.getY() + 1] = t;
-                break;
-        }
-    }
-
-    public Position getGoalPos() {
-        return goalPos;
-    }
-
 }
