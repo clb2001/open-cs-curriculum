@@ -84,22 +84,22 @@ public class Room {
         }
     }
 
-    public List<Connector> findConnectors(TETile[][] WorldMap, int width, int height) {
+    public List<Connector> findConnectors(TETile[][] worldMap, int width, int height) {
         List<Connector> res = new ArrayList<>();
         for (int i = bottomLeft.getX(); i <= upRight.getX(); i++) {
             Position p1 = new Position(i, bottomLeft.getY());
-            Connector.addConnectableDirection(res, WorldMap, Tileset.FLOOR, Direction.DOWN,
+            Connector.addConnectableDirection(res, worldMap, Tileset.FLOOR, Direction.DOWN,
                     p1, width, height);
             Position p2 = new Position(i, upRight.getY());
-            Connector.addConnectableDirection(res, WorldMap, Tileset.FLOOR, Direction.UP,
+            Connector.addConnectableDirection(res, worldMap, Tileset.FLOOR, Direction.UP,
                     p2, width, height);
         }
         for (int i = bottomLeft.getY(); i <= upRight.getY(); i++) {
             Position p1 = new Position(bottomLeft.getX(), i);
-            Connector.addConnectableDirection(res, WorldMap, Tileset.FLOOR, Direction.LEFT,
+            Connector.addConnectableDirection(res, worldMap, Tileset.FLOOR, Direction.LEFT,
                     p1, width, height);
             Position p2 = new Position(upRight.getX(), i);
-            Connector.addConnectableDirection(res, WorldMap, Tileset.FLOOR, Direction.RIGHT,
+            Connector.addConnectableDirection(res, worldMap, Tileset.FLOOR, Direction.RIGHT,
                     p2, width, height);
         }
         return res;

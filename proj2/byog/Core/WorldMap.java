@@ -165,7 +165,7 @@ public class WorldMap {
         Position selected = edges.get(selector);
         selected.drawTile(worldMap, Tileset.LOCKED_DOOR);
         selected.drawInitialPerson(worldMap, WIDTH, HEIGHT);
-     }
+    }
 
     /*
      * other methods()
