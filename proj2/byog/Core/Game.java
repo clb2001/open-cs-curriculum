@@ -60,7 +60,10 @@ public class Game {
     }
 
     private void loadGame() {
-
+        ter.initialize(WIDTH, HEIGHT + 1);
+        TETile[][] worldMap = WorldMap.getSavedGame();
+        ter.renderFrame(worldMap);
+        WorldMap.playGame(ter, worldMap);
     }
 
     /**
