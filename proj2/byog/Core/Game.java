@@ -4,10 +4,6 @@ import byog.TileEngine.TERenderer;
 import byog.TileEngine.TETile;
 import edu.princeton.cs.algs4.StdDraw;
 
-import java.awt.*;
-import java.util.Random;
-import java.util.List;
-
 /**
  * @author chenglibin
  */

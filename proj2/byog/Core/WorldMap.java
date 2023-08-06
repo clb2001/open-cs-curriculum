@@ -5,7 +5,12 @@ import byog.TileEngine.TETile;
 import byog.TileEngine.Tileset;
 import edu.princeton.cs.algs4.StdDraw;
 
-import java.io.*;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
+import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -218,7 +223,7 @@ public class WorldMap {
                     Player.walkRight(worldMap);
                     break;
                 case ':':
-                    if (i + 1 <  playString.length()
+                    if (i + 1 < playString.length()
                             && playString.charAt(i + 1) == 'q') {
                         saveGame(worldMap);
                         return;

@@ -2,7 +2,8 @@ package byog.Core;
 
 import edu.princeton.cs.algs4.StdDraw;
 
-import java.awt.*;
+import java.awt.Font;
+import java.awt.Color;
 
 import static byog.Core.Game.HEIGHT;
 import static byog.Core.Game.WIDTH;
