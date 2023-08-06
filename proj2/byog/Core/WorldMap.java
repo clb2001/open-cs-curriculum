@@ -3,6 +3,7 @@ package byog.Core;
 import byog.TileEngine.TETile;
 import byog.TileEngine.Tileset;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -15,6 +16,35 @@ import static byog.Core.Game.WIDTH;
  * @author chenglibin
  */
 public class WorldMap {
+    public static TETile[][] generateWorld(long seed) {
+        TETile[][] worldMap = new TETile[WIDTH][HEIGHT];
+
+        // step 1: initialize the world map
+        WorldMap.initializeWorld(worldMap);
+        Random random = new Random(seed);
+
+        // step 2: generate the rooms
+        List<Room> rooms = WorldMap.generateRooms(worldMap, random, 10);
+
+        // step 3: generate the hallways
+        WorldMap.generateHalls(worldMap, random);
+
+        // step 4: generator the connectors
+        WorldMap.generateConnector(worldMap, random, rooms);
+
+        // step 5: carve dead ends
+        if (!rooms.isEmpty()) {
+            WorldMap.carveDeadEnds(worldMap);
+        }
+
+        // step 6: carve extra walls
+        WorldMap.carveExtraWalls(worldMap);
+
+        // step 7: add door and initial player
+        WorldMap.addDoorAndInitialPlayer(worldMap, random);
+
+        return worldMap;
+    }
 
     /*
      * @source: https://github.com/lijian12345/cs61b-sp18
@@ -165,6 +195,63 @@ public class WorldMap {
         Position selected = edges.get(selector);
         selected.drawTile(worldMap, Tileset.LOCKED_DOOR);
         selected.drawInitialPerson(worldMap, WIDTH, HEIGHT);
+    }
+
+    /*
+     * step 6: play the game
+     */
+    public static void playGame(TETile[][] worldMap, String playString) {
+        for (int i = 0; i < playString.length(); i++) {
+            switch (playString.charAt(i)) {
+                case 'w':
+                    Player.walkUp(worldMap);
+                    break;
+                case 'a':
+                    Player.walkLeft(worldMap);
+                    break;
+                case 's':
+                    Player.walkDown(worldMap);
+                    break;
+                case 'd':
+                    Player.walkRight(worldMap);
+                    break;
+                case ':':
+                    if (i + 1 <  playString.length()
+                            && playString.charAt(i + 1) == 'q') {
+                        saveGame(worldMap);
+                        return;
+                    }
+                    break;
+                default:
+            }
+        }
+    }
+
+    /*
+     * get && save game
+     */
+    public static void saveGame(TETile[][] worldMap) {
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("savefile.txt"));
+            out.writeObject(worldMap);
+            out.writeObject(Player.getPos());
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static TETile[][] getSavedGame() {
+        TETile[][] lastSavedWorld = null;
+        try {
+            ObjectInputStream in = new ObjectInputStream(new FileInputStream("savefile.txt"));
+            lastSavedWorld = (TETile[][]) in.readObject();
+            Player.setPos((Position) in.readObject());
+            in.close();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return lastSavedWorld;
     }
 
     /*

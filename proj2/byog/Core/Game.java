@@ -2,7 +2,9 @@ package byog.Core;
 
 import byog.TileEngine.TERenderer;
 import byog.TileEngine.TETile;
+import edu.princeton.cs.algs4.StdDraw;
 
+import java.awt.*;
 import java.util.Random;
 import java.util.List;
 
@@ -30,19 +32,34 @@ public class Game {
         }
     }
 
-    public void drawStartUI() {
-
+    private void drawStartUI() {
+        Util.initializeCanvas();
+        Util.drawStartUI();
     }
 
-    public char getFirstChar() {
-        return 'a';
+    private char getFirstChar() {
+        char chr;
+        while (true) {
+            if (!StdDraw.hasNextKeyTyped()) {
+                continue;
+            }
+            chr = Character.toLowerCase(StdDraw.nextKeyTyped());
+            if (chr == 'n' || chr == 'l' || chr == 'q') {
+                break;
+            }
+        }
+        return chr;
     }
 
-    public void newGame() {
-
+    private void newGame() {
+        long seed = Util.getSeed();
+        ter.initialize(WIDTH, HEIGHT + 1);
+        TETile[][] world = WorldMap.generateWorld(seed);
+        ter.renderFrame(world);
+        WorldMap.playGame(world);
     }
 
-    public void loadGame() {
+    private void loadGame() {
 
     }
 
@@ -77,50 +94,25 @@ public class Game {
         return finalWorldFrame;
     }
 
-    public TETile[][] newGame(String input) {
+    private TETile[][] newGame(String input) {
         // first, we should get the random seed.
         int index = input.indexOf('s');
         long seed = Util.parseNumber(input.substring(1, index));
 
         // second, we should initialize the map.
-        TETile[][] finalWorldFrame = generateWorld(seed);
+        TETile[][] finalWorldFrame = WorldMap.generateWorld(seed);
 
         // finally, play the game ...
+        WorldMap.playGame(finalWorldFrame, input.substring(index + 1));
 
         return finalWorldFrame;
     }
 
-    public TETile[][] loadGame(String input) {
-        return null;
+    private TETile[][] loadGame(String input) {
+        TETile[][] lastSavedWorld;
+        lastSavedWorld = WorldMap.getSavedGame();
+        WorldMap.playGame(lastSavedWorld, input.substring(1));
+        return lastSavedWorld;
     }
 
-    public TETile[][] generateWorld(long seed) {
-        TETile[][] worldMap = new TETile[WIDTH][HEIGHT];
-
-        // step 1: initialize the world map
-        WorldMap.initializeWorld(worldMap);
-        Random random = new Random(seed);
-
-        // step 2: generate the rooms
-        List<Room> rooms = WorldMap.generateRooms(worldMap, random, 10);
-
-        // step 3: generate the hallways
-        WorldMap.generateHalls(worldMap, random);
-
-        // step 4: generator the connectors
-        WorldMap.generateConnector(worldMap, random, rooms);
-
-        // step 5: carve dead ends
-        if (!rooms.isEmpty()) {
-            WorldMap.carveDeadEnds(worldMap);
-        }
-
-        // step 6: carve extra walls
-        WorldMap.carveExtraWalls(worldMap);
-
-        // step 7: add door and initial player
-        WorldMap.addDoorAndInitialPlayer(worldMap, random);
-
-        return worldMap;
-    }
 }
