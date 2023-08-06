@@ -1,7 +1,9 @@
 package byog.Core;
 
+import byog.TileEngine.TERenderer;
 import byog.TileEngine.TETile;
 import byog.TileEngine.Tileset;
+import edu.princeton.cs.algs4.StdDraw;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -238,6 +240,50 @@ public class WorldMap {
             out.close();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    /*
+     * play game with keyboard
+     */
+    public static void playGame(TERenderer ter, TETile[][] worldMap) {
+        while (true) {
+            if (!StdDraw.hasNextKeyTyped()) {
+                continue;
+            }
+            char chr = Character.toLowerCase(StdDraw.nextKeyTyped());
+            switch (chr) {
+                case 'w':
+                    Player.walkUp(worldMap);
+                    ter.renderFrame(worldMap);
+                    break;
+                case 'a':
+                    Player.walkLeft(worldMap);
+                    ter.renderFrame(worldMap);
+                    break;
+                case 's':
+                    Player.walkDown(worldMap);
+                    ter.renderFrame(worldMap);
+                    break;
+                case 'd':
+                    Player.walkRight(worldMap);
+                    ter.renderFrame(worldMap);
+                    break;
+                case ':':
+                    while (true) {
+                        if (!StdDraw.hasNextKeyTyped()) {
+                            continue;
+                        }
+                        if (Character.toLowerCase(StdDraw.nextKeyTyped()) == 'q') {
+                            saveGame(worldMap);
+                            System.exit(0);
+                        } else {
+                            break;
+                        }
+                    }
+                    break;
+                default:
+            }
         }
     }
 

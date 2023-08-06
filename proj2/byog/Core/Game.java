@@ -56,7 +56,7 @@ public class Game {
         ter.initialize(WIDTH, HEIGHT + 1);
         TETile[][] world = WorldMap.generateWorld(seed);
         ter.renderFrame(world);
-        WorldMap.playGame(world);
+        WorldMap.playGame(ter, world);
     }
 
     private void loadGame() {

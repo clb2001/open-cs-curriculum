@@ -40,7 +40,30 @@ public class Util {
     public static long getSeed() {
         StdDraw.clear(Color.BLACK);
         StdDraw.setFont(new Font("Monaco", Font.PLAIN, 50));
-        
+        StdDraw.text(WIDTH / 2, 3 * HEIGHT / 4, "Please enter a random seed: ");
+        StdDraw.show();
+        String seedString = "";
+        while (true) {
+            StdDraw.clear(Color.BLACK);
+            StdDraw.setFont(new Font("Monaco", Font.PLAIN, 50));
+            StdDraw.text(WIDTH / 2, 3 * HEIGHT / 4, "Please enter a random seed: ");
+            char digit;
+            if (!StdDraw.hasNextKeyTyped()) {
+                continue;
+            }
+            digit = Character.toLowerCase(StdDraw.nextKeyTyped());
+            if (digit != 's') {
+                if (!Character.isDigit(digit)) {
+                    continue;
+                }
+                seedString += digit;
+                StdDraw.setFont(new Font("Monaco", Font.PLAIN, 30));
+                StdDraw.text(WIDTH / 2, HEIGHT / 2, seedString);
+                StdDraw.show();
+            } else {
+                break;
+            }
+        }
+        return parseNumber(seedString);
     }
-
 }
