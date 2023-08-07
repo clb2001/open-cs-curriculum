@@ -23,10 +23,10 @@ public class Connector {
     public void connect(TETile[][] world, TETile t) {
         switch (direction) {
             case RIGHT:
-                world[goalPos.getX() + 1][goalPos.getY()] = t;
+                world[goalPos.getX() - 1][goalPos.getY()] = t;
                 break;
             case LEFT:
-                world[goalPos.getX() - 1][goalPos.getY()] = t;
+                world[goalPos.getX() + 1][goalPos.getY()] = t;
                 break;
             case UP:
                 world[goalPos.getX()][goalPos.getY() - 1] = t;
