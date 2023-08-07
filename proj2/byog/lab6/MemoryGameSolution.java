@@ -25,7 +25,6 @@ public class MemoryGameSolution {
         }
 
         long seed = Long.parseLong(args[0]);
-//        long seed = Long.parseLong("123");
         MemoryGameSolution game = new MemoryGameSolution(40, 40, seed);
         game.startGame();
     }
