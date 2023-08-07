@@ -23,4 +23,16 @@ public class Main {
             game.playWithKeyboard();
         }
     }
+
+//    public static void main(String[] args) {
+//        Game game = new Game();
+//        TETile[][] worldState = game.playWithInputString("n4979154725301381123swwawd");
+//        System.out.println(TETile.toString(worldState));
+//
+//        worldState = game.playWithInputString("n2950953422994074886sdaddawa");
+//        System.out.println(TETile.toString(worldState));
+//
+//        worldState = game.playWithInputString("ld");
+//        System.out.println(TETile.toString(worldState));
+//    }
 }
