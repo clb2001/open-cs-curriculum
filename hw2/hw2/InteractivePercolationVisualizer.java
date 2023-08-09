@@ -13,6 +13,9 @@ package hw2;
 import edu.princeton.cs.algs4.StdDraw;
 import edu.princeton.cs.algs4.StdOut;
 
+/**
+ * @author chenglibin
+ */
 public class InteractivePercolationVisualizer {
     private static final int DELAY = 20;
 

@@ -1,5 +1,8 @@
 package hw2;
 
+/**
+ * @author chenglibin
+ */
 public class PercolationStats {
     // perform T independent experiments on an N-by-N grid
     public PercolationStats(int N, int T, PercolationFactory pf) {
