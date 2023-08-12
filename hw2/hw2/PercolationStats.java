@@ -23,7 +23,8 @@ public class PercolationStats {
         for (int i = 0; i < T; i++) {
             results[i] = 0;
         }
-        if (N <= 0 || T > N) {
+
+        if (N <= 0 || T <= 0) {
             throw new IllegalArgumentException();
         }
 
@@ -56,11 +57,11 @@ public class PercolationStats {
 
     // low endpoint of 95% confidence interval
     public double confidenceLow() {
-        return (mean - (1.96 * stddev) / Math.sqrt(experiments));
+        return (mean() - (1.96 * stddev()) / Math.sqrt(experiments));
     }
 
     // high endpoint of 95% c
     public double confidenceHigh() {
-        return (mean + (1.96 * stddev) / Math.sqrt(experiments));
+        return (mean() + (1.96 * stddev()) / Math.sqrt(experiments));
     }
 }
