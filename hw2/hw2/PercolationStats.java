@@ -1,18 +1,18 @@
 package hw2;
 
 import edu.princeton.cs.introcs.StdStats;
-import java.util.Random;
+import edu.princeton.cs.introcs.StdRandom;
 
 /**
  * @author chenglibin
  */
 public class PercolationStats {
-    Percolation p;
-    int size;
-    int experiments;
-    double[] results;
-    double mean;
-    double stddev;
+    private Percolation p;
+    private int size;
+    private int experiments;
+    private double[] results;
+    private double mean;
+    private double stddev;
 
     // perform T independent experiments on an N-by-N grid
     // Monte Carlo simulation
@@ -23,27 +23,22 @@ public class PercolationStats {
         for (int i = 0; i < T; i++) {
             results[i] = 0;
         }
+        if (N <= 0 || T > N) {
+            throw new IllegalArgumentException();
+        }
 
         for (int i = 0; i < T; i++) {
-            for (int j = 0; j < N * N; j++) {
-                // randomly process
-                p = pf.make(N);
-                int count = 0;
-                Random random = new Random();
-                while (count < j) {
-                    int row = random.nextInt(N);
-                    int col = random.nextInt(N);
-                    if (!p.isOpen(row, col)) {
-                        p.open(row, col);
-                        count++;
-                    }
-                }
-                if (p.percolates()) {
-                    double prob = (double) j / (N * N);
-                    results[i] = prob;
-                    break;
-                }
+            // randomly process
+            p = pf.make(N);
+            while (!p.percolates()) {
+                int x, y;
+                do {
+                    x = StdRandom.uniform(N);
+                    y = StdRandom.uniform(N);
+                } while (p.isOpen(x, y));
+                p.open(x, y);
             }
+            results[i] = (double) p.numberOfOpenSites() / (N * N);
         }
     }
 
@@ -61,11 +56,11 @@ public class PercolationStats {
 
     // low endpoint of 95% confidence interval
     public double confidenceLow() {
-        return (mean - (1.96 * Math.sqrt(stddev)) / Math.sqrt(experiments));
+        return (mean - (1.96 * stddev) / Math.sqrt(experiments));
     }
 
     // high endpoint of 95% c
     public double confidenceHigh() {
-        return (mean + (1.96 * Math.sqrt(stddev)) / Math.sqrt(experiments));
+        return (mean + (1.96 * stddev) / Math.sqrt(experiments));
     }
 }

@@ -7,26 +7,38 @@ import edu.princeton.cs.algs4.WeightedQuickUnionUF;
  */
 public class Percolation {
     // create N-by-N grid, with all sites initially blocked
-    int[] grid;
-    int length;
-    int size;
-    int openSites;
-    WeightedQuickUnionUF quickUnion;
+    private int[] status;
+    private int length;
+    private int top;
+    private int bottom;
+    private int size;
+    private int openSites;
+    private WeightedQuickUnionUF quickUnion1;
+    private WeightedQuickUnionUF quickUnion2;
 
     public Percolation(int N) {
-
         try {
             if (N <= 0) {
                 throw new IllegalArgumentException();
             }
             size = N;
             length = N * N;
-            grid = new int[length];
+
+            // 要体会设置两个头节点的好处，除了初始化一次，可以之后的查询可以大大降低时间复杂度
+            status = new int[length];
+            top = length;
+            bottom = length + 1;
             openSites = 0;
-            quickUnion = new WeightedQuickUnionUF(length);
+            quickUnion1 = new WeightedQuickUnionUF(length + 1);
+            quickUnion2 = new WeightedQuickUnionUF(length + 2);
             for (int i = 0; i < length; i++) {
                 // every grid is set to be blocked
-                grid[i] = 0;
+                status[i] = 0;
+            }
+            for (int i = 0; i < size; i++) {
+                quickUnion1.union(xyTo1D(0, i), top);
+                quickUnion2.union(xyTo1D(0, i), top);
+                quickUnion2.union(xyTo1D(size - 1, i), bottom);
             }
         } catch (IllegalArgumentException e) {
             System.out.println("Exception!");
@@ -35,36 +47,43 @@ public class Percolation {
 
     // open the site (row, col) if it is not open already
     public void open(int row, int col) {
+
+        if (isOpen(row, col)) {
+            return;
+        }
         int center = xyTo1D(row, col);
-        grid[xyTo1D(row, col)] = 1;
+        status[xyTo1D(row, col)] = 1;
         openSites += 1;
-        if (col > 0) {
+        if (col > 0 && isOpen(row, col - 1)) {
             int left = xyTo1D(row, col - 1);
-            quickUnion.union(left, center);
+            quickUnion1.union(left, center);
+            quickUnion2.union(left, center);
         }
-        if (col < size - 1) {
+        if (col < size - 1 && isOpen(row, col + 1)) {
             int right = xyTo1D(row, col + 1);
-            quickUnion.union(right, center);
+            quickUnion1.union(right, center);
+            quickUnion2.union(right, center);
         }
-        if (row > 0) {
+        if (row > 0 && isOpen(row - 1, col)) {
             int up = xyTo1D(row - 1, col);
-            quickUnion.union(up, center);
+            quickUnion1.union(up, center);
+            quickUnion2.union(up, center);
         }
-        if (row < size - 1) {
+        if (row < size - 1 && isOpen(row + 1, col)) {
             int down = xyTo1D(row + 1, col);
-            quickUnion.union(down, center);
+            quickUnion1.union(down, center);
+            quickUnion2.union(down, center);
         }
     }
 
     // is the site (row, col) open?
     public boolean isOpen(int row, int col) {
-        return grid[xyTo1D(row, col)] == 1;
+        return status[xyTo1D(row, col)] == 1;
     }
 
     // is the site (row, col) full?
     public boolean isFull(int row, int col) {
-        int root = quickUnion.find(xyTo1D(row, col));
-        return (grid[root] == 2) && (root < size);
+        return quickUnion1.connected(xyTo1D(row, col), top);
     }
 
     // number of open sites
@@ -74,17 +93,21 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates() {
-        for (int i = 0; i < size; i++) {
-            if (isFull(size - 1, i)) {
-                return true;
-            }
+        if (size == 1) {
+            return true;
         }
-        return false;
+        return quickUnion2.connected(top, bottom);
     }
 
     // use for unit testing (not required)
     public static void main(String[] args) {
 
+    }
+
+    private void validate(int row, int col) {
+        if (row < 0 || row >= size || col < 0 || col >= size) {
+            throw new IndexOutOfBoundsException("out of boundary!");
+        }
     }
 
     private int xyTo1D(int row, int column) {
