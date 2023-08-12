@@ -1,7 +1,7 @@
 package hw2;
 
-import edu.princeton.cs.introcs.StdRandom;
 import edu.princeton.cs.introcs.StdStats;
+import java.util.Random;
 
 /**
  * @author chenglibin
@@ -23,11 +23,21 @@ public class PercolationStats {
         for (int i = 0; i < T; i++) {
             results[i] = 0;
         }
-        p = pf.make(N);
 
         for (int i = 0; i < T; i++) {
             for (int j = 0; j < N * N; j++) {
                 // randomly process
+                p = pf.make(N);
+                int count = 0;
+                Random random = new Random();
+                while (count < j) {
+                    int row = random.nextInt(N);
+                    int col = random.nextInt(N);
+                    if (!p.isOpen(row, col)) {
+                        p.open(row, col);
+                        count++;
+                    }
+                }
                 if (p.percolates()) {
                     double prob = (double) j / (N * N);
                     results[i] = prob;

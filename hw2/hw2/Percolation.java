@@ -47,11 +47,11 @@ public class Percolation {
             quickUnion.union(right, center);
         }
         if (col > 0) {
-            int up = xyTo1D(row - 1, col);
+            int up = xyTo1D(row + 1, col);
             quickUnion.union(up, center);
         }
         if (col < size - 1) {
-            int down = xyTo1D(row + 1, col);
+            int down = xyTo1D(row - 1, col);
             quickUnion.union(down, center);
         }
     }
