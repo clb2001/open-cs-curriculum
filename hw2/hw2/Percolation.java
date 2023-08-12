@@ -38,20 +38,20 @@ public class Percolation {
         int center = xyTo1D(row, col);
         grid[xyTo1D(row, col)] = 1;
         openSites += 1;
-        if (row > 0) {
+        if (col > 0) {
             int left = xyTo1D(row, col - 1);
             quickUnion.union(left, center);
         }
-        if (row < size - 1) {
+        if (col < size - 1) {
             int right = xyTo1D(row, col + 1);
             quickUnion.union(right, center);
         }
-        if (col > 0) {
-            int up = xyTo1D(row + 1, col);
+        if (row > 0) {
+            int up = xyTo1D(row - 1, col);
             quickUnion.union(up, center);
         }
-        if (col < size - 1) {
-            int down = xyTo1D(row - 1, col);
+        if (row < size - 1) {
+            int down = xyTo1D(row + 1, col);
             quickUnion.union(down, center);
         }
     }
@@ -87,7 +87,7 @@ public class Percolation {
 
     }
 
-    private int xyTo1D(int r, int c) {
-        return r * size + c;
+    private int xyTo1D(int row, int column) {
+        return row * size + column;
     }
 }
