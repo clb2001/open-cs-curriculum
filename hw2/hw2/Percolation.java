@@ -85,6 +85,7 @@ public class Percolation {
     // is the site (row, col) full?
     public boolean isFull(int row, int col) {
         validate(row, col);
+        // 注意边界条件的处理，以及特殊情况的判断
         if (!isOpen(row, col)) {
             return false;
         }
@@ -98,8 +99,8 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates() {
-        if (size == 1) {
-            return true;
+        if (numberOfOpenSites() == 0) {
+            return false;
         }
         return quickUnion2.connected(top, bottom);
     }

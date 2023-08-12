@@ -17,15 +17,15 @@ public class PercolationStats {
     // perform T independent experiments on an N-by-N grid
     // Monte Carlo simulation
     public PercolationStats(int N, int T, PercolationFactory pf) {
+        if (N <= 0 || T <= 0) {
+            throw new IllegalArgumentException();
+        }
+
         size = N;
         experiments = T;
         results = new double[experiments];
         for (int i = 0; i < T; i++) {
             results[i] = 0;
-        }
-
-        if (N <= 0 || T <= 0) {
-            throw new IllegalArgumentException();
         }
 
         for (int i = 0; i < T; i++) {
