@@ -83,7 +83,7 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         } else {
             p.value = value;
         }
-
+        return p;
     }
 
     /** Inserts the key KEY
@@ -95,6 +95,7 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
             throw new IllegalArgumentException("Please provide the key!");
         }
         root = putHelper(key, value, root);
+        size++;
     }
 
     /* Returns the number of key-value mappings in this map. */
