@@ -28,7 +28,7 @@ public class Percolation {
                 // every grid is set to be blocked
                 grid[i] = 0;
             }
-        } catch (IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             System.out.println("Exception!");
         }
     }
@@ -64,7 +64,7 @@ public class Percolation {
     // is the site (row, col) full?
     public boolean isFull(int row, int col) {
         int root = quickUnion.find(xyTo1D(row, col));
-        return grid[root] == 2 && (root < size);
+        return (grid[root] == 2) && (root < size);
     }
 
     // number of open sites
