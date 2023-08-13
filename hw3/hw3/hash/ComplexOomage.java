@@ -80,7 +80,7 @@ public class ComplexOomage implements Oomage {
         return new ComplexOomage(params);
     }
 
-    public static ComplexOomage ComplexOomage(int N) {
+    public static ComplexOomage complex(int N) {
         ArrayList<Integer> params = new ArrayList<>(N);
         for (int i = 0; i < N; i += 1) {
             params.add(1);
