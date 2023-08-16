@@ -32,7 +32,7 @@ public class Board {
     public boolean equals(Object y) {
 
     }
-    
+
     /** Returns the string representation of the board. 
       * Uncomment this method. */
     public String toString() {
