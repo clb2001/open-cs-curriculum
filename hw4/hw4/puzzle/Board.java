@@ -33,7 +33,7 @@ public class Board {
 
     }
 
-    /** Returns the string representation of the board. 
+    /** Returns the string representation of the board.
       * Uncomment this method. */
     public String toString() {
         StringBuilder s = new StringBuilder();
