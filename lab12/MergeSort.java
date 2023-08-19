@@ -78,11 +78,11 @@ public class MergeSort {
         Queue<Item> right = new Queue<>();
         int i = 0;
         while (i < size / 2) {
-            left.enqueue(items.dequeue());
+            left.enqueue(items.peek());
             i++;
         }
         while (i < size) {
-            right.enqueue(items.dequeue());
+            right.enqueue(items.peek());
             i++;
         }
         Queue<Item> l = mergeSort(left);
