@@ -100,6 +100,9 @@ public class Board implements WorldState {
             return false;
         }
         Board demo = (Board) y;
+        if (demo.N != N) {
+            return false;
+        }
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
                 if (board[i][j] != demo.board[i][j]) {
