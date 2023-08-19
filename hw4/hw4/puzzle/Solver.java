@@ -51,7 +51,7 @@ public class Solver {
             for (WorldState neighb: curr.state.neighbors()) {
                 Node next = new Node(neighb, curr.moves + 1, curr);
                 // exclude itself
-                if (next.prev != null && neighb.equals(curr.prev.state)) {
+                if (curr.prev != null && neighb.equals(curr.prev.state)) {
                     continue;
                 }
                 queue.insert(next);
