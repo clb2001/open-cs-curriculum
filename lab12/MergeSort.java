@@ -73,17 +73,17 @@ public class MergeSort {
         if (items.size() <= 1) {
             return items;
         }
-        int size = items.size();
+        int mid = items.size() / 2;
         Queue<Item> left = new Queue<>();
         Queue<Item> right = new Queue<>();
-        int i = 0;
-        while (i < size / 2) {
-            left.enqueue(items.peek());
-            i++;
-        }
-        while (i < size) {
-            right.enqueue(items.peek());
-            i++;
+        int k = 0;
+        for (Item i: items) {
+            if (k < mid) {
+                left.enqueue(i);
+            } else {
+                right.enqueue(i);
+            }
+            k++;
         }
         Queue<Item> l = mergeSort(left);
         Queue<Item> r = mergeSort(right);
