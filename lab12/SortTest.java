@@ -1,6 +1,8 @@
 import edu.princeton.cs.algs4.Queue;
 import org.junit.Test;
 
+import static org.junit.Assert.*;
+
 public class SortTest {
     @Test
     public void testMergeSort() {
@@ -8,10 +10,10 @@ public class SortTest {
         students.enqueue("Alice");
         students.enqueue("Vanessa");
         students.enqueue("Ethan");
-        MergeSort.mergeSort(students);
-        while (!students.isEmpty()) {
-            System.out.println(students.dequeue());
-        }
+        students = MergeSort.mergeSort(students);
+        assertEquals(students.dequeue(), "Alice");
+        assertEquals(students.dequeue(), "Ethan");
+        assertEquals(students.dequeue(), "Vanessa");
     }
 
     @Test
@@ -20,9 +22,9 @@ public class SortTest {
         students.enqueue("Alice");
         students.enqueue("Vanessa");
         students.enqueue("Ethan");
-        QuickSort.quickSort(students);
-        while (!students.isEmpty()) {
-            System.out.println(students.dequeue());
-        }
+        students = QuickSort.quickSort(students);
+        assertEquals(students.dequeue(), "Alice");
+        assertEquals(students.dequeue(), "Ethan");
+        assertEquals(students.dequeue(), "Vanessa");
     }
 }
