@@ -1,6 +1,11 @@
 package hw4.puzzle;
 
-import java.util.*;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Stack;
+import java.util.Comparator;
 
 import edu.princeton.cs.algs4.MinPQ;
 

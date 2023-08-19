@@ -2,8 +2,6 @@ package hw4.puzzle;
 
 import edu.princeton.cs.algs4.Queue;
 
-import java.util.Arrays;
-
 public class Board implements WorldState {
     private int[][] board;
     private int N;
@@ -112,15 +110,20 @@ public class Board implements WorldState {
         return true;
     }
 
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
     /** Returns the string representation of the board.
       * Uncomment this method. */
     public String toString() {
         StringBuilder s = new StringBuilder();
-        int N = size();
-        s.append(N + "\n");
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
-                s.append(String.format("%2d ", tileAt(i,j)));
+        int n = size();
+        s.append(n + "\n");
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                s.append(String.format("%2d ", tileAt(i, j)));
             }
             s.append("\n");
         }
