@@ -4,6 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class SortTest {
+    // 注意它的要求，不能改变原来的队列
     @Test
     public void testMergeSort() {
         Queue<String> students = new Queue<String>();

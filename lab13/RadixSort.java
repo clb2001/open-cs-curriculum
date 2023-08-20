@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Class for doing Radix sort
  *
@@ -16,8 +19,35 @@ public class RadixSort {
      * @return String[] the sorted array
      */
     public static String[] sort(String[] asciis) {
-        // TODO: Implement LSD Sort
-        return null;
+        String[] arr = new String[asciis.length];
+        int maxLength = 0;
+        for (String s : asciis) {
+            maxLength = Math.max(maxLength, s.length());
+        }
+        List<List<String>> buckets = new ArrayList<>();
+        for (int i = 0; i < 256; i++) {
+            buckets.add(new ArrayList<>());
+        }
+        for (int i = maxLength - 1; i >= 0; i--)  {
+            for (String string: asciis) {
+                if (string.length() > i) {
+                    char ch = string.charAt(i);
+                    buckets.get((int) ch).add(string);
+                } else {
+                    buckets.get(0).add(string);
+                }
+            }
+            int k = 0;
+            for (List<String> bucket: buckets) {
+                for (String string: bucket) {
+                    arr[k] = string;
+                    k++;
+                }
+                bucket.clear();
+            }
+
+        }
+        return arr;
     }
 
     /**
