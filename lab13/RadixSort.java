@@ -20,32 +20,13 @@ public class RadixSort {
      */
     public static String[] sort(String[] asciis) {
         String[] arr = new String[asciis.length];
+        System.arraycopy(asciis, 0, arr, 0, asciis.length);
         int maxLength = 0;
         for (String s : asciis) {
             maxLength = Math.max(maxLength, s.length());
         }
-        List<List<String>> buckets = new ArrayList<>();
-        for (int i = 0; i < 256; i++) {
-            buckets.add(new ArrayList<>());
-        }
-        for (int i = maxLength - 1; i >= 0; i--)  {
-            for (String string: asciis) {
-                if (string.length() > i) {
-                    char ch = string.charAt(i);
-                    buckets.get((int) ch).add(string);
-                } else {
-                    buckets.get(0).add(string);
-                }
-            }
-            int k = 0;
-            for (List<String> bucket: buckets) {
-                for (String string: bucket) {
-                    arr[k] = string;
-                    k++;
-                }
-                bucket.clear();
-            }
-
+        for (int i = maxLength - 1; i >= 0; i--) {
+            sortHelperLSD(arr, i);
         }
         return arr;
     }
@@ -58,7 +39,32 @@ public class RadixSort {
      */
     private static void sortHelperLSD(String[] asciis, int index) {
         // Optional LSD helper method for required LSD radix sort
-        return;
+        final int ASCII_SIZE = 256;
+        int n = asciis.length;
+        String[] output = new String[n];
+        int[] count = new int[ASCII_SIZE];
+
+        // 统计每个字符出现的次数
+        for (String str : asciis) {
+            int charIndex = index < str.length() ? str.charAt(index) : 0;// 0 is important!
+            count[charIndex]++;
+        }
+
+        // 将计数数组转换为累加数组
+        for (int i = 1; i < ASCII_SIZE; i++) {
+            count[i] += count[i - 1];
+        }
+
+        // 根据字符出现次数将字符串放入正确的位置
+        for (int i = n - 1; i >= 0; i--) {
+            String str = asciis[i];
+            int charIndex = index < str.length() ? str.charAt(index) : 0;
+            output[count[charIndex] - 1] = str;
+            count[charIndex]--;
+        }
+
+        // 将排序后的结果复制回原数组
+        System.arraycopy(output, 0, asciis, 0, n);
     }
 
     /**
