@@ -1,5 +1,7 @@
 import edu.princeton.cs.algs4.Picture;
 
+import java.awt.*;
+
 public class SeamCarver {
     // 这个homework一定要先处理好矩阵再做，否则很容易陷入混乱。
     // 2023.8.20于文图
@@ -82,8 +84,8 @@ public class SeamCarver {
                     minPath[i][j] = (minEnergy[i][j - 1] < minEnergy[i - 1][j - 1] ? i : i - 1);
                 } else {
                     double tmp = Math.min(minEnergy[i - 1][j - 1], minEnergy[i + 1][j - 1]);
-                    minPath[i][j] = (minEnergy[i - 1][j - 1] < minEnergy[i + 1][j - 1] ?
-                            i - 1 : i + 1);
+                    minPath[i][j] = (minEnergy[i - 1][j - 1] < minEnergy[i + 1][j - 1]
+                            ? i - 1 : i + 1);
                     minEnergy[i][j] = e[i][j] + Math.min(tmp, minEnergy[i][j - 1]);
                     minPath[i][j] = (tmp < minEnergy[i][j - 1] ? minPath[i][j] : i);
                 }
@@ -137,8 +139,8 @@ public class SeamCarver {
                     minPath[i][j] = (minEnergy[i - 1][j - 1] < minEnergy[i - 1][j] ? j - 1 : j);
                 } else {
                     double tmp = Math.min(minEnergy[i - 1][j - 1], minEnergy[i - 1][j + 1]);
-                    minPath[i][j] = (minEnergy[i - 1][j + 1] < minEnergy[i - 1][j - 1] ?
-                            j + 1 : j - 1);
+                    minPath[i][j] = (minEnergy[i - 1][j + 1] < minEnergy[i - 1][j - 1]
+                            ? j + 1 : j - 1);
                     minEnergy[i][j] = e[i][j] + Math.min(tmp, minEnergy[i - 1][j]);
                     minPath[i][j] = (tmp < minEnergy[i - 1][j] ? minPath[i][j] : j);
                 }
@@ -192,11 +194,7 @@ public class SeamCarver {
         if (x < 0 || x >= width || y < 0 || y >= height) {
             throw new IndexOutOfBoundsException();
         }
-        int[] arr = new int[3];
-        int rgb = picture.getRGB(x, y);
-        arr[0] = (rgb >> 16) & 0xFF;
-        arr[1] = (rgb >> 8) & 0xFF;
-        arr[2] = (rgb) & 0xFF;
-        return arr;
+        Color color = picture.get(x, y);
+        return new int[]{color.getRed(), color.getGreen(), color.getRed()};
     }
 }
