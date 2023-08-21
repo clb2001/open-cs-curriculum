@@ -8,14 +8,14 @@ public class SeamCarver {
     private int height;
 
     public SeamCarver(Picture picture) {
-        this.picture = picture;
+        this.picture = new Picture(picture);
         this.width = picture.width();
         this.height = picture.height();
     }
 
     // current picture
     public Picture picture() {
-        return picture;
+        return new Picture(picture);
     }
 
     // width of current picture
@@ -43,13 +43,13 @@ public class SeamCarver {
         rgbUp = (y < height - 1 ? getRGBArr(x, y + 1) : getRGBArr(x, 0));
         rgbDown = (y > 0 ? getRGBArr(x, y - 1) : getRGBArr(x, height - 1));
 
-        double Rx = Math.pow(rgbRight[0] - rgbLeft[0], 2);
-        double Gx = Math.pow(rgbRight[1] - rgbLeft[1], 2);
-        double Bx = Math.pow(rgbRight[2] - rgbLeft[2], 2);
-        double Ry = Math.pow(rgbUp[0] - rgbDown[0], 2);
-        double Gy = Math.pow(rgbUp[1] - rgbDown[1], 2);
-        double By = Math.pow(rgbUp[2] - rgbDown[2], 2);
-        return Rx + Ry + Gx + Gy + Bx + By;
+        double rx = Math.pow(rgbRight[0] - rgbLeft[0], 2);
+        double gx = Math.pow(rgbRight[1] - rgbLeft[1], 2);
+        double bx = Math.pow(rgbRight[2] - rgbLeft[2], 2);
+        double ry = Math.pow(rgbUp[0] - rgbDown[0], 2);
+        double gy = Math.pow(rgbUp[1] - rgbDown[1], 2);
+        double by = Math.pow(rgbUp[2] - rgbDown[2], 2);
+        return rx + ry + gx + gy + bx + by;
     }
 
     // sequence of indices for horizontal seam
@@ -73,16 +73,19 @@ public class SeamCarver {
         for (int j = 1; j < width; j++) {
             for (int i = 0; i < height; i++) {
                 if (i == 0) {
-                    minEnergy[i][j] = e[i][j] + Math.min(minEnergy[i][j - 1], minEnergy[i + 1][j - 1]);
-                    minPath[i][j] = (minEnergy[i][j - 1] < minEnergy[i + 1][j - 1]? i : i + 1);
+                    minEnergy[i][j] = e[i][j]
+                            + Math.min(minEnergy[i][j - 1], minEnergy[i + 1][j - 1]);
+                    minPath[i][j] = (minEnergy[i][j - 1] < minEnergy[i + 1][j - 1] ? i : i + 1);
                 } else if (i == height - 1) {
-                    minEnergy[i][j] = e[i][j] + Math.min(minEnergy[i][j - 1], minEnergy[i - 1][j - 1]);
-                    minPath[i][j] = (minEnergy[i][j - 1] < minEnergy[i - 1][j - 1]? i : i - 1);
+                    minEnergy[i][j] = e[i][j]
+                            + Math.min(minEnergy[i][j - 1], minEnergy[i - 1][j - 1]);
+                    minPath[i][j] = (minEnergy[i][j - 1] < minEnergy[i - 1][j - 1] ? i : i - 1);
                 } else {
                     double tmp = Math.min(minEnergy[i - 1][j - 1], minEnergy[i + 1][j - 1]);
-                    minPath[i][j] = (minEnergy[i - 1][j - 1] < minEnergy[i + 1][j - 1]? i - 1 : i + 1);
+                    minPath[i][j] = (minEnergy[i - 1][j - 1] < minEnergy[i + 1][j - 1] ?
+                            i - 1 : i + 1);
                     minEnergy[i][j] = e[i][j] + Math.min(tmp, minEnergy[i][j - 1]);
-                    minPath[i][j] = (tmp < minEnergy[i][j - 1]? minPath[i][j] : i);
+                    minPath[i][j] = (tmp < minEnergy[i][j - 1] ? minPath[i][j] : i);
                 }
             }
         }
@@ -125,16 +128,19 @@ public class SeamCarver {
         for (int i = 1; i < height; i++) {
             for (int j = 0; j < width; j++) {
                 if (j == 0) {
-                    minEnergy[i][j] = e[i][j] + Math.min(minEnergy[i - 1][j], minEnergy[i - 1][j + 1]);
-                    minPath[i][j] = (minEnergy[i - 1][j] < minEnergy[i - 1][j + 1]? j : j + 1);
+                    minEnergy[i][j] = e[i][j]
+                            + Math.min(minEnergy[i - 1][j], minEnergy[i - 1][j + 1]);
+                    minPath[i][j] = (minEnergy[i - 1][j] < minEnergy[i - 1][j + 1] ? j : j + 1);
                 } else if (j == width - 1) {
-                    minEnergy[i][j] = e[i][j] + Math.min(minEnergy[i - 1][j - 1], minEnergy[i - 1][j]);
-                    minPath[i][j] = (minEnergy[i - 1][j - 1] < minEnergy[i - 1][j]? j - 1 : j);
+                    minEnergy[i][j] = e[i][j]
+                            + Math.min(minEnergy[i - 1][j - 1], minEnergy[i - 1][j]);
+                    minPath[i][j] = (minEnergy[i - 1][j - 1] < minEnergy[i - 1][j] ? j - 1 : j);
                 } else {
                     double tmp = Math.min(minEnergy[i - 1][j - 1], minEnergy[i - 1][j + 1]);
-                    minPath[i][j] = (minEnergy[i - 1][j + 1] < minEnergy[i - 1][j - 1]? j + 1 : j - 1);
+                    minPath[i][j] = (minEnergy[i - 1][j + 1] < minEnergy[i - 1][j - 1] ?
+                            j + 1 : j - 1);
                     minEnergy[i][j] = e[i][j] + Math.min(tmp, minEnergy[i - 1][j]);
-                    minPath[i][j] = (tmp < minEnergy[i - 1][j]? minPath[i][j] : j);
+                    minPath[i][j] = (tmp < minEnergy[i - 1][j] ? minPath[i][j] : j);
                 }
             }
         }
