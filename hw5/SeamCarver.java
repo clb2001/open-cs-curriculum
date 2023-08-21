@@ -1,6 +1,6 @@
 import edu.princeton.cs.algs4.Picture;
 
-import java.awt.*;
+import java.awt.Color;
 
 public class SeamCarver {
     // 这个homework一定要先处理好矩阵再做，否则很容易陷入混乱。
@@ -195,6 +195,6 @@ public class SeamCarver {
             throw new IndexOutOfBoundsException();
         }
         Color color = picture.get(x, y);
-        return new int[]{color.getRed(), color.getGreen(), color.getRed()};
+        return new int[]{color.getRed(), color.getGreen(), color.getBlue()};
     }
 }
