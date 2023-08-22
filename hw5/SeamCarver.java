@@ -82,6 +82,14 @@ public class SeamCarver {
             return new int[]{flag};
         }
 
+        if (height == 1) {
+            int[] res = new int[width];
+            for (int i = 0; i < width; i++) {
+                res[i] = 0;
+            }
+            return res;
+        }
+
         // 这里应该用自己熟悉的寻址方式写
         // 这里的循环顺序很有讲究
         for (int j = 1; j < width; j++) {
@@ -148,6 +156,14 @@ public class SeamCarver {
                 }
             }
             return new int[]{flag};
+        }
+
+        if (width == 1) {
+            int[] res = new int[height];
+            for (int i = 0; i < height; i++) {
+                res[i] = 0;
+            }
+            return res;
         }
 
         // 这里应该用自己熟悉的寻址方式写
