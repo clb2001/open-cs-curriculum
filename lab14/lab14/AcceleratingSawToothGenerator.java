@@ -25,6 +25,6 @@ public class AcceleratingSawToothGenerator implements Generator {
                     / (Math.pow(acc, n) * n - 1);
             return k * state + b;
         }
-        
+
     }
 }

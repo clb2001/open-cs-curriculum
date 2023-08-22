@@ -70,6 +70,18 @@ public class SeamCarver {
             minPath[i][0] = -1;
         }
 
+        if (width == 1) {
+            int flag = 0;
+            double cost = minEnergy[0][0];
+            for (int i = 1; i < height; i++) {
+                if (minEnergy[i][0] < cost) {
+                    flag = i;
+                    cost = minEnergy[i][0];
+                }
+            }
+            return new int[]{flag};
+        }
+
         // 这里应该用自己熟悉的寻址方式写
         // 这里的循环顺序很有讲究
         for (int j = 1; j < width; j++) {
@@ -126,6 +138,18 @@ public class SeamCarver {
             minPath[0][i] = -1;
         }
 
+        if (height == 1) {
+            int flag = 0;
+            double cost = minEnergy[0][0];
+            for (int i = 1; i < width; i++) {
+                if (minEnergy[0][i] < cost) {
+                    flag = i;
+                    cost = minEnergy[0][i];
+                }
+            }
+            return new int[]{flag};
+        }
+
         // 这里应该用自己熟悉的寻址方式写
         for (int i = 1; i < height; i++) {
             for (int j = 0; j < width; j++) {
@@ -174,7 +198,7 @@ public class SeamCarver {
                 throw new IllegalArgumentException();
             }
         }
-        picture = SeamRemover.removeHorizontalSeam(picture, seam);
+        SeamRemover.removeHorizontalSeam(picture, seam);
     }
 
     // remove vertical seam from picture
@@ -187,7 +211,7 @@ public class SeamCarver {
                 throw new IllegalArgumentException();
             }
         }
-        picture = SeamRemover.removeVerticalSeam(picture, seam);
+        SeamRemover.removeVerticalSeam(picture, seam);
     }
 
     private int[] getRGBArr(int x, int y) {
