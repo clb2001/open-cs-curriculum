@@ -36,5 +36,9 @@ public class Main {
 		Generator generator = new AcceleratingSawToothGenerator(200, 1.1);
 		GeneratorAudioVisualizer gav = new GeneratorAudioVisualizer(generator);
 		gav.drawAndPlay(4096, 1000000);
+
+//		Generator generator = new StrangeBitwiseGenerator(1024);
+//		GeneratorAudioVisualizer gav = new GeneratorAudioVisualizer(generator);
+//		gav.drawAndPlay(128000, 1000000);
 	}
 } 

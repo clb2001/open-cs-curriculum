@@ -3,18 +3,17 @@ package lab14;
 import lab14lib.Generator;
 
 public class SawToothGenerator implements Generator {
-    private int frequency;
+    private int period;
     private int state;
 
-    public SawToothGenerator(int frequency) {
+    public SawToothGenerator(int period) {
         state = 0;
-        this.frequency = frequency;
+        this.period = period;
     }
 
     @Override
     public double next() {
         state = state + 1;
-        double period = (double) 2 / frequency;
-        return period * (state % frequency) - 1;
+        return (double) 2 / period * (state % period) - 1;
     }
 }
