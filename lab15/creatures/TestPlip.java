@@ -42,21 +42,23 @@ public class TestPlip {
         assertNotSame(p, offspring);
     }
 
-    //@Test
+    @Test
     public void testChoose() {
         Plip p = new Plip(1.2);
         HashMap<Direction, Occupant> surrounded = new HashMap<Direction, Occupant>();
         surrounded.put(Direction.TOP, new Impassible());
         surrounded.put(Direction.BOTTOM, new Impassible());
         surrounded.put(Direction.LEFT, new Impassible());
-        surrounded.put(Direction.RIGHT, new Impassible());
+//        surrounded.put(Direction.RIGHT, new Impassible());
+        surrounded.put(Direction.RIGHT, new Empty());
 
         //You can create new empties with new Empty();
         //Despite what the spec says, you cannot test for Cloruses nearby yet.
         //Sorry!  
 
         Action actual = p.chooseAction(surrounded);
-        Action expected = new Action(Action.ActionType.STAY);
+//        Action expected = new Action(Action.ActionType.STAY);
+        Action expected = new Action(Action.ActionType.REPLICATE, Direction.RIGHT);
 
         assertEquals(expected, actual);
     }
