@@ -7,7 +7,7 @@ class TrieNode {
     boolean isEndOfWord;
 
     public TrieNode() {
-        children = new TrieNode[54];
+        children = new TrieNode[56];
         isEndOfWord = false;
     }
 }
@@ -25,8 +25,11 @@ class Trie {
             int index;
             if (c == '\'') {
                 index = 0;
-            }
-            else if (c == 'é') {
+            } else if (c == 'ê') {
+                index = 55;
+            } else if (c == 'é') {
+                index = 54;
+            } else if (c == 'è') {
                 index = 53;
             } else if (Character.isLowerCase(c)) {
                 index = c - 'a' + 27;
