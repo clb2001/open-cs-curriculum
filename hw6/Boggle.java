@@ -2,6 +2,46 @@ import java.util.ArrayList;
 import java.util.List;
 import edu.princeton.cs.introcs.In;
 
+class TrieNode {
+    TrieNode[] children;
+    boolean isEndOfWord;
+
+    public TrieNode() {
+        children = new TrieNode[54];
+        isEndOfWord = false;
+    }
+}
+
+class Trie {
+    TrieNode root;
+
+    public Trie() {
+        root = new TrieNode();
+    }
+
+    public void insert(String word) {
+        TrieNode node = root;
+        for (char c: word.toCharArray()) {
+            int index;
+            if (c == '\'') {
+                index = 0;
+            }
+            else if (c == 'é') {
+                index = 53;
+            } else if (Character.isLowerCase(c)) {
+                index = c - 'a' + 27;
+            } else {
+                index = c - 'A' + 1;
+            }
+            if (node.children[index] == null) {
+                node.children[index] = new TrieNode();
+            }
+            node = node.children[index];
+        }
+        node.isEndOfWord = true;
+    }
+}
+
 public class Boggle {
     
     // File path of dictionary file
@@ -19,16 +59,16 @@ public class Boggle {
      */
     public static List<String> solve(int k, String boardFilePath) {
         // prepare the array
-        List<List<Character>> arr = prepare(k, boardFilePath);
+        List<List<Character>> arr = prepareArr(k, boardFilePath);
+
+        // get the word list
+        List<String> words = prepareDict(dictPath);
 
         // get the result temp
-        List<String> res = getResult(k, arr);
-
-        // sft
-        return res;
+        return getResult(k, arr, words);
     }
 
-    public static List<List<Character>> prepare(int k, String boardFilePath) {
+    private static List<List<Character>> prepareArr(int k, String boardFilePath) {
         In file = new In(boardFilePath);
         In dict = new In(dictPath);
         if (!file.exists() || !dict.exists() || k <= 0) {
@@ -57,9 +97,66 @@ public class Boggle {
         return arr;
     }
 
-    public static List<String> getResult(int k, List<List<Character>> arr) {
+    private static List<String> prepareDict(String path) {
+        List<String> arr = new ArrayList<>();
+        In file = new In(path);
+        while (!file.isEmpty()) {
+            String tmp = file.readLine();
+            arr.add(tmp);
+        }
+        return arr;
+    }
+
+    private static List<String> getResult(
+            int k, List<List<Character>> arr, List<String> words) {
         List<String> res = new ArrayList<>();
-        return null;
+        Trie tire = new Trie();
+        for (String word: words) {
+            tire.insert(word);
+        }
+
+        for (int i = 0; i < arr.size(); i++) {
+            for (int j = 0; j < arr.get(0).size(); j++) {
+                dfs(arr, i, j, tire.root, new StringBuilder(), res);
+            }
+        }
+
+        res.sort((a, b) -> b.length() - a.length());
+        return res.subList(0, Math.min(k, res.size()));
+    }
+
+    private static void dfs(List<List<Character>> arr, int i, int j,
+                            TrieNode node, StringBuilder path,
+                            List<String> res) {
+        if (i < 0 || i >= arr.size() || j < 0 || j >= arr.get(0).size()) {
+            return;
+        }
+        char c = arr.get(i).get(j);
+        int index = c - 'a';
+        if (node.children[index] == null) {
+            return;
+        }
+        path.append(c);
+        TrieNode nextNode = node.children[index];
+        arr.get(i).set(j, '#');
+
+        if (nextNode.isEndOfWord) {
+            res.add(path.toString());
+            nextNode.isEndOfWord = false;
+        }
+
+        int[][] direction = {
+                {1, 0}, {-1, 0}, {0, 1}, {0, -1},
+                {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+        };
+        for (int[] dir: direction) {
+            int newI = i + dir[0];
+            int newJ = j + dir[1];
+            dfs(arr, newI, newJ, nextNode, path, res);
+        }
+
+        arr.get(i).set(j, c);
+        path.setLength(path.length() - 1);
     }
 
     public static void main(String[] args) {
