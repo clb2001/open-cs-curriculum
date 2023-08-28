@@ -22,20 +22,7 @@ class Trie {
     public void insert(String word) {
         TrieNode node = root;
         for (char c: word.toCharArray()) {
-            int index;
-            if (c == '\'') {
-                index = 0;
-            } else if (c == 'ê') {
-                index = 55;
-            } else if (c == 'é') {
-                index = 54;
-            } else if (c == 'è') {
-                index = 53;
-            } else if (Character.isLowerCase(c)) {
-                index = c - 'a' + 27;
-            } else {
-                index = c - 'A' + 1;
-            }
+            int index = Boggle.getIndex(c);
             if (node.children[index] == null) {
                 node.children[index] = new TrieNode();
             }
@@ -48,7 +35,7 @@ class Trie {
 public class Boggle {
     
     // File path of dictionary file
-    static String dictPath = "words.txt";
+    static String dictPath = "/home/chenglibin/code/study/CS61B/hw6/trivial_words.txt";
 
     /**
      * Solves a Boggle puzzle.
@@ -69,6 +56,24 @@ public class Boggle {
 
         // get the result temp
         return getResult(k, arr, words);
+    }
+
+    protected static int getIndex(char c) {
+        int index;
+        if (c == '\'') {
+            index = 0;
+        } else if (c == 'ê') {
+            index = 55;
+        } else if (c == 'é') {
+            index = 54;
+        } else if (c == 'è') {
+            index = 53;
+        } else if (Character.isLowerCase(c)) {
+            index = c - 'a' + 27;
+        } else {
+            index = c - 'A' + 1;
+        }
+        return index;
     }
 
     private static List<List<Character>> prepareArr(int k, String boardFilePath) {
@@ -135,8 +140,8 @@ public class Boggle {
             return;
         }
         char c = arr.get(i).get(j);
-        int index = c - 'a';
-        if (node.children[index] == null) {
+        int index = getIndex(c);
+        if (c == '#' || node.children[index] == null) {
             return;
         }
         path.append(c);
@@ -162,8 +167,9 @@ public class Boggle {
         path.setLength(path.length() - 1);
     }
 
-    public static void main(String[] args) {
-        String board = "/home/chenglibin/code/study/CS61B/hw6/exampleBoard.txt";
-        List<String> res = solve(3, board);
-    }
+//    public static void main(String[] args) {
+//        String board = "/home/chenglibin/code/study/CS61B/hw6/exampleBoard2.txt";
+//        List<String> res = solve(7, board);
+//        System.out.println(res);
+//    }
 }
