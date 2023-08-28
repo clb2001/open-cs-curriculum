@@ -2,40 +2,39 @@ import java.util.ArrayList;
 import java.util.List;
 import edu.princeton.cs.introcs.In;
 
-class TrieNode {
-    TrieNode[] children;
-    boolean isEndOfWord;
-
-    public TrieNode() {
-        children = new TrieNode[56];
-        isEndOfWord = false;
-    }
-}
-
-class Trie {
-    TrieNode root;
-
-    public Trie() {
-        root = new TrieNode();
-    }
-
-    public void insert(String word) {
-        TrieNode node = root;
-        for (char c: word.toCharArray()) {
-            int index = Boggle.getIndex(c);
-            if (node.children[index] == null) {
-                node.children[index] = new TrieNode();
-            }
-            node = node.children[index];
-        }
-        node.isEndOfWord = true;
-    }
-}
-
 public class Boggle {
-    
+    static class TrieNode {
+        TrieNode[] children;
+        boolean isEndOfWord;
+
+        public TrieNode() {
+            children = new TrieNode[56];
+            isEndOfWord = false;
+        }
+    }
+
+    static class Trie {
+        TrieNode root;
+
+        public Trie() {
+            root = new TrieNode();
+        }
+
+        public void insert(String word) {
+            TrieNode node = root;
+            for (char c: word.toCharArray()) {
+                int index = Boggle.getIndex(c);
+                if (node.children[index] == null) {
+                    node.children[index] = new TrieNode();
+                }
+                node = node.children[index];
+            }
+            node.isEndOfWord = true;
+        }
+    }
+
     // File path of dictionary file
-    static String dictPath = "/home/chenglibin/code/study/CS61B/hw6/trivial_words.txt";
+    static String dictPath = "words.txt";
 
     /**
      * Solves a Boggle puzzle.
@@ -129,7 +128,13 @@ public class Boggle {
             }
         }
 
-        res.sort((a, b) -> b.length() - a.length());
+        res.sort((a, b) -> {
+            if (a.length() != b.length()) {
+                return b.length() - a.length();
+            } else {
+                return a.compareTo(b);
+            }
+        });
         return res.subList(0, Math.min(k, res.size()));
     }
 
@@ -167,9 +172,9 @@ public class Boggle {
         path.setLength(path.length() - 1);
     }
 
-//    public static void main(String[] args) {
-//        String board = "/home/chenglibin/code/study/CS61B/hw6/exampleBoard2.txt";
-//        List<String> res = solve(7, board);
-//        System.out.println(res);
-//    }
+    public static void main(String[] args) {
+        String board = "/home/chenglibin/code/study/CS61B/hw6/smallBoard.txt";
+        List<String> res = solve(100, board);
+        System.out.println(res);
+    }
 }
