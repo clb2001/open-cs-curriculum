@@ -8,6 +8,19 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TestBinaryTrie {
     @Test
+    public void makeHuffman() {
+        System.out.println("Testing that bestPrefixMatch works with exact matches.");
+        Map<Character, Integer> frequencyTable = new HashMap<Character, Integer>();
+        frequencyTable.put('a', 1);
+        frequencyTable.put('b', 2);
+        frequencyTable.put('c', 4);
+        frequencyTable.put('d', 5);
+        frequencyTable.put('e', 6);
+        BinaryTrie trie = new BinaryTrie(frequencyTable);
+        return;
+    }
+
+    @Test
     public void bestPrefixMatchWithExactMatches() {
         System.out.println("Testing that bestPrefixMatch works with exact matches.");
         Map<Character, Integer> frequencyTable = new HashMap<Character, Integer>();

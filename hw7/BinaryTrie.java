@@ -1,6 +1,7 @@
 import edu.princeton.cs.algs4.MinPQ;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 public class BinaryTrie implements Serializable {
@@ -48,10 +49,47 @@ public class BinaryTrie implements Serializable {
     }
 
     public Match longestPrefixMatch(BitSequence querySequence) {
-        return null;
+        Node node = root;
+        BitSequence sequence = new BitSequence();
+        int i = 0;
+        char c = '\u0000';
+        while (node != null) {
+            if (node.left != null && node.right != null) {
+                sequence = sequence.appended(querySequence.bitAt(i));
+            }
+            c = node.ch;
+            if (querySequence.bitAt(i) == 0) {
+                node = node.left;
+            } else {
+                node = node.right;
+            }
+            i += 1;
+        }
+        return new Match(sequence, c);
     }
 
     public Map<Character, BitSequence> buildLookupTable() {
-        return null;
+        Map<Character, BitSequence> table = new HashMap<>();
+        String temp = "0";
+        preOrder(root, table, temp);
+        return table;
+    }
+
+    private void preOrder(Node node, Map<Character, BitSequence> table,
+                          String temp) {
+        if (node == null) {
+            return;
+        } else if (node.right == null && node.left == null) {
+            table.put(node.ch, new BitSequence(temp));
+            temp = temp.substring(0, temp.length() - 1);
+        } else {
+            if (node.left != null) {
+                temp += '0';
+                preOrder(node.left, table, temp);
+            } else {
+                temp += '1';
+                preOrder(node.right, table, temp);
+            }
+        }
     }
 }
