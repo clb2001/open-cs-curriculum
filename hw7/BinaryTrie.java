@@ -70,23 +70,22 @@ public class BinaryTrie implements Serializable {
 
     public Map<Character, BitSequence> buildLookupTable() {
         Map<Character, BitSequence> table = new HashMap<>();
-        String temp = "0";
+        String temp = "";
         preOrder(root, table, temp);
         return table;
     }
 
     private void preOrder(Node node, Map<Character, BitSequence> table,
                           String temp) {
-        if (node == null) {
-            return;
-        } else if (node.right == null && node.left == null) {
+        if (node.right == null && node.left == null) {
             table.put(node.ch, new BitSequence(temp));
-            temp = temp.substring(0, temp.length() - 1);
         } else {
             if (node.left != null) {
                 temp += '0';
                 preOrder(node.left, table, temp);
-            } else {
+                temp = temp.substring(0, temp.length() - 1);
+            }
+            if (node.right != null) {
                 temp += '1';
                 preOrder(node.right, table, temp);
             }
