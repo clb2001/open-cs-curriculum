@@ -1,6 +1,3 @@
-import javax.sound.midi.Sequencer;
-import java.util.ArrayList;
-
 public class HuffmanDecoder {
     public static void main(String[] args) {
         ObjectReader or = new ObjectReader(args[0]);
