@@ -5,10 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BinaryTrie implements Serializable {
+    private static final long serialVersionUID = 157816335349L;
     private static final int R = 256;
     private Node root;
 
-    public static class Node implements Comparable<Node> {
+    public static class Node implements Comparable<Node>, Serializable {
         private final char ch;
         private final int freq;
         private final Node left, right;

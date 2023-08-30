@@ -24,9 +24,12 @@ public class HuffmanEncoder {
         ow.writeObject(trie);
         Map<Character, BitSequence> table = trie.buildLookupTable();
         List<BitSequence> sequences = new ArrayList<>();
+        int count = 0;
         for (char c: res) {
             sequences.add(table.get(c));
+            count++;
         }
+        ow.writeObject(count);
         BitSequence r = BitSequence.assemble(sequences);
         ow.writeObject(r);
     }

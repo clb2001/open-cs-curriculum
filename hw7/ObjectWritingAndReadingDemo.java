@@ -16,11 +16,11 @@ public class ObjectWritingAndReadingDemo {
         stringSet.add("twenty");
 
         /** Create a file called somefile.bla that ObjectWriter ow will write to. */
-        ObjectWriter ow = new ObjectWriter("somefile.bla");
+        ObjectWriter ow = new ObjectWriter("/home/chenglibin/code/study/CS61B/hw7/demo.txt");
         ow.writeObject(integerList);
         ow.writeObject(stringSet);
 
-        ObjectReader or = new ObjectReader("somefile.bla");
+        ObjectReader or = new ObjectReader("/home/chenglibin/code/study/CS61B/hw7/demo.txt");
         /* Read first object from the file. */
         Object x = or.readObject();
         /* Read second object from the file. */
