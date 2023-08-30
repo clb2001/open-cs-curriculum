@@ -12,7 +12,7 @@ public class HuffmanDecoder {
         BitSequence s = (BitSequence) z;
         char[] chars = new char[count];
         int index = 0;
-        while (s != null) {
+        while (s.length() != 0) {
             Match m = t.longestPrefixMatch(s);
             chars[index] = m.getSymbol();
             index++;
