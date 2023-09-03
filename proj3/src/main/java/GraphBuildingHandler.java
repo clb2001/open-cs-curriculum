@@ -73,6 +73,7 @@ public class GraphBuildingHandler extends DefaultHandler {
 //            System.out.println("Node lat: " + attributes.getValue("lat"));
 
             /* TODO Use the above information to save a "node" to somewhere. */
+
             /* Hint: A graph-like structure would be nice. */
 
         } else if (qName.equals("way")) {
