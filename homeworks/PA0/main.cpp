@@ -39,10 +39,29 @@ int main(){
     // matrix output
     std::cout << "Example of output \n";
     std::cout << i << std::endl;
+    std::cout << j << std::endl;
     // matrix add i + j
+    std::cout << i + j << std::endl;
     // matrix scalar multiply i * 2.0
+    std::cout << i * 2.0f << std::endl;
     // matrix multiply i * j
+    std::cout << i * j << std::endl;
     // matrix multiply vector i * v
+    std::cout << i * v << std::endl;
+    // matrix aaa
+    Eigen::Matrix3f aaa;
+    aaa << 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0;
+    std::cout << "res:" << std::endl;
+    std::cout << aaa + j << std::endl;
 
+    // PA0
+    Eigen::Vector3f p(2, 1, 0);
+    Eigen::Matrix3f r;
+    Eigen::Matrix3f t;
+    double c = 2;
+    r << 1 / std::sqrt(c), -1 / std::sqrt(c), 0, 1 / std::sqrt(c), 1 / std::sqrt(c), 0, 0, 0, 1;
+    t << 1, 0, 1, 0, 1, 2, 0, 0, 1;
+    std::cout << "result: " << std::endl;
+    std::cout << t * r * p << std::endl; 
     return 0;
 }
