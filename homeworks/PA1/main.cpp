@@ -23,12 +23,18 @@ Eigen::Matrix4f get_model_matrix(float rotation_angle)
 {
     Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
 
+    // // initialization method:
+    // Eigen::Matrix4f rotation4 = Eigen::Matrix4f::Identity();
+    // Eigen::Matrix3f rotation3 = Eigen::Matrix4f::Identity();
+    // rotation4.topLeftCorner(3, 3) = rotation3;
+
     // TODO: Implement this function
     // Create the model matrix for rotating the triangle around the Z axis.
     // Then return it.
-    model << std::cos(rotation_angle), -std::sin(rotation_angle), 0, 0,
-            std::sin(rotation_angle), std::cos(rotation_angle), 0, 0,
-            0, 0, 1, 0, 0, 0, 0, 1;
+    // 注意角度转弧度
+    model << std::cos(MY_PI / 180 * rotation_angle), -std::sin(MY_PI / 180 * rotation_angle), 0, 0,
+            std::sin(MY_PI / 180 * rotation_angle), std::cos(MY_PI / 180 * rotation_angle), 
+            0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
     return model;
 }
 
@@ -42,8 +48,17 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
     // TODO: Implement this function
     // Create the projection matrix for the given parameters.
     // Then return it.
-    
 
+    
+    // first, according to eye_fov, tan(90 / pi * eye_fov) = t / abs(n)
+    // second, according to aspect_ratio, aspect_ratio = r / t
+    // so we can solve the equation
+    zNear = -zNear;
+    zFar = -zFar;
+    projection << -1 / (aspect_ratio * std::tan(MY_PI / 180 * eye_fov / 2)), 0, 0, 0,
+    0, -1 / std::tan(MY_PI / 180 * eye_fov / 2), 0, 0,
+    0, 0, (zNear + zFar) / (zNear - zFar), -2 * zFar * zNear / (zNear - zFar),
+    0, 0, 1, 0;
     return projection;
 }
 
