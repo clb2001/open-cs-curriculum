@@ -9,6 +9,7 @@
 #include <opencv2/opencv.hpp>
 #include <math.h>
 
+#define MIN_DISTANCE 2147483647
 
 rst::pos_buf_id rst::rasterizer::load_positions(const std::vector<Eigen::Vector3f> &positions)
 {
@@ -125,13 +126,26 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     // z_interpolated *= w_reciprocal;
 
     // TODO : set the current pixel (use the set_pixel function) to the color of the triangle (use getColor function) if it should be painted.
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
+    // 这里要根据v的信息确定三角形的范围，不要在width和height中遍历
+    int left = std::min(v[0].x(), std::min(v[1].x(), v[2].x()));
+    int right = std::max(v[0].x(), std::max(v[1].x(), v[2].x()));
+    int up = std::max(v[0].y(), std::max(v[1].y(), v[2].y()));
+    int down = std::min(v[0].y(), std::min(v[1].y(), v[2].y()));
+    
+    for (int x = left; x <= right; x++) {
+        for (int y = down; y <= up; y++) {
             if (insideTriangle(x, y, t.v)) {
                 auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
                 float w_reciprocal = 1.0/(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
                 float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
-                z_interpolated *= w_reciprocal;                
+                z_interpolated *= w_reciprocal;
+                if (z_interpolated < depth_buf[get_index(x, y)]) {
+                    Vector3f color = t.getColor();
+                    Vector3f point;
+                    point << x, y, z_interpolated;
+                    depth_buf[get_index(x, y)] = z_interpolated;
+                    set_pixel(point, color);
+                }             
             }
         }
     }
