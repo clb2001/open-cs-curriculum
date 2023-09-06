@@ -45,11 +45,11 @@ static bool insideTriangle(int x, int y, const Vector3f* _v)
 {   
     // TODO : Implement this function to check if the point (x, y) is inside the triangle represented by _v[0], _v[1], _v[2]
     Vector2f AB = Vector2f(_v[2].x() - _v[1].x(), _v[2].y() - _v[1].y());
-    Vector2f BC = Vector2f(_v[3].x() - _v[2].x(), _v[3].y() - _v[2].y());
-    Vector2f CA = Vector2f(_v[1].x() - _v[3].x(), _v[1].y() - _v[3].y());
+    Vector2f BC = Vector2f(_v[0].x() - _v[2].x(), _v[0].y() - _v[2].y());
+    Vector2f CA = Vector2f(_v[1].x() - _v[0].x(), _v[1].y() - _v[0].y());
     Vector2f AP = Vector2f(x - _v[1].x(), y - _v[1].y());
     Vector2f BP = Vector2f(x - _v[2].x(), y - _v[2].y());
-    Vector2f CP = Vector2f(x - _v[3].x(), y - _v[3].y());
+    Vector2f CP = Vector2f(x - _v[0].x(), y - _v[0].y());
     return (AB.x() * AP.y() - AP.x() * AB.y()) *
            (BC.x() * BP.y() - BP.x() * BC.y()) *
            (CA.x() * CP.y() - CP.x() * CA.y()) >= 0;
