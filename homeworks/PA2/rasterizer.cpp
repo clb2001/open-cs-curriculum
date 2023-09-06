@@ -126,7 +126,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     // z_interpolated *= w_reciprocal;
 
     // TODO : set the current pixel (use the set_pixel function) to the color of the triangle (use getColor function) if it should be painted.
-    // 这里要根据v的信息确定三角形的范围，不要在width和height中遍历
+    // 这里要根据v的信息确定三角形的范围，不要以width和height为范围遍历
     int left = std::min(v[0].x(), std::min(v[1].x(), v[2].x()));
     int right = std::max(v[0].x(), std::max(v[1].x(), v[2].x()));
     int up = std::max(v[0].y(), std::max(v[1].y(), v[2].y()));
