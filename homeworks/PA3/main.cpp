@@ -92,7 +92,7 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
     if (payload.texture)
     {
         // TODO: Get the texture value at the texture coordinates of the current fragment
-
+        return_color = payload.texture->getColor(payload.tex_coords.x(), payload.tex_coords.y());
     }
     Eigen::Vector3f texture_color;
     texture_color << return_color.x(), return_color.y(), return_color.z();
@@ -121,6 +121,30 @@ Eigen::Vector3f texture_fragment_shader(const fragment_shader_payload& payload)
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
 
+        // float temp = -payload.color.dot(payload.normal.normalized());
+        // temp = std::clamp(temp, 0.0f, 1.0f); 
+        // kd *= temp;
+        // return_color = kd;
+        Eigen::Vector3f ambient, diffuse, specular;
+        Eigen::Vector3f light_dir = (light.position - point).normalized();
+        Eigen::Vector3f eye_dir = (eye_pos - point).normalized();
+        Eigen::Vector3f half_dir = (light_dir + eye_dir).normalized();
+        float dist = std::pow((light.position - point).norm(), 2);
+
+        // ambient lighting
+        ambient = ka.cwiseProduct(amb_light_intensity);
+
+        // diffuse reflection
+        // 这个max函数的参数必须都是显式的float
+        float tmp = std::max(0.0f, normal.normalized().dot(light_dir));
+        diffuse = kd.cwiseProduct(light.intensity) / dist * tmp;
+
+        // specular highlights
+        tmp = std::pow(std::max(0.0f, normal.normalized().dot(half_dir)), p);
+        specular = ks.cwiseProduct(light.intensity) / dist * tmp;
+
+        Eigen::Vector3f temp = ambient + diffuse + specular;
+        result_color += temp;
     }
 
     return result_color * 255.f;
@@ -150,7 +174,26 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     {
         // TODO: For each light source in the code, calculate what the *ambient*, *diffuse*, and *specular* 
         // components are. Then, accumulate that result on the *result_color* object.
-        
+        Eigen::Vector3f ambient, diffuse, specular;
+        Eigen::Vector3f light_dir = (light.position - point).normalized();
+        Eigen::Vector3f eye_dir = (eye_pos - point).normalized();
+        Eigen::Vector3f half_dir = (light_dir + eye_dir).normalized();
+        float dist = std::pow((light.position - point).norm(), 2);
+
+        // ambient lighting
+        ambient = ka.cwiseProduct(amb_light_intensity);
+
+        // diffuse reflection
+        // 这个max函数的参数必须都是显式的float
+        float tmp = std::max(0.0f, normal.normalized().dot(light_dir));
+        diffuse = kd.cwiseProduct(light.intensity) / dist * tmp;
+
+        // specular highlights
+        tmp = std::pow(std::max(0.0f, normal.normalized().dot(half_dir)), p);
+        specular = ks.cwiseProduct(light.intensity) / dist * tmp;
+
+        Eigen::Vector3f temp = ambient + diffuse + specular;
+        result_color += temp;       
     }
 
     return result_color * 255.f;
