@@ -105,5 +105,21 @@ Intersection BVHAccel::Intersect(const Ray& ray) const
 Intersection BVHAccel::getIntersection(BVHBuildNode* node, const Ray& ray) const
 {
     // TODO Traverse the BVH to find intersection
-
+    // Vector3f E1 = v1 - v0;
+    // Vector3f E2 = v2 - v0;
+    // Vector3f S = orig - v0;
+    // Vector3f S1 = crossProduct(dir, E2);
+    // Vector3f S2 = crossProduct(S, E1);
+    // float tmp = dotProduct(S1, E1);
+    // float t = dotProduct(S2, E2) / tmp;
+    // float b1 = dotProduct(S1, S) / tmp;
+    // float b2 = dotProduct(S2, dir) / tmp;
+    // // do not forget t >= 0!
+    // if (t >= 0 && b1 > 0 && b2 > 0 && (1 - b1 - b2) > 0) {
+    //     tnear = t;
+    //     u = b1;
+    //     v = b2;
+    //     return true;
+    // }
+    // return false;
 }

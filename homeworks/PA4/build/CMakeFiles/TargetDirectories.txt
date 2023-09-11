@@ -1,0 +1,3 @@
+/home/chenglibin/code/study/GAMES101/homeworks/PA4/build/CMakeFiles/BezierCurve.dir
+/home/chenglibin/code/study/GAMES101/homeworks/PA4/build/CMakeFiles/edit_cache.dir
+/home/chenglibin/code/study/GAMES101/homeworks/PA4/build/CMakeFiles/rebuild_cache.dir
