@@ -1,5 +1,6 @@
-import java.util.HashMap;
-import java.util.Map;
+import com.sun.org.apache.bcel.internal.generic.RETURN;
+
+import java.util.*;
 
 /**
  * This class provides all code necessary to take a query box and produce
@@ -8,9 +9,21 @@ import java.util.Map;
  * not draw the output correctly.
  */
 public class Rasterer {
+    private final double s_l = 288200;
+    private double lrlon;
+    private double ullon;
+    private double ullat;
+    private double lrlat;
+    private double w;
+    private double h;
+    private double lonDPP;
 
     public Rasterer() {
         // YOUR CODE HERE
+    }
+
+    public void mapRaster(Map<String, Object> params) {
+
     }
 
     /**
@@ -42,11 +55,45 @@ public class Rasterer {
      *                    forget to set this to true on success! <br>
      */
     public Map<String, Object> getMapRaster(Map<String, Double> params) {
-        // System.out.println(params);
+        System.out.println("params: " + params);
         Map<String, Object> results = new HashMap<>();
-        System.out.println("Since you haven't implemented getMapRaster, nothing is displayed in "
-                           + "your browser.");
+        lrlon = params.get("lrlon");
+        ullon = params.get("ullon");
+        w = params.get("w");
+        h = params.get("h");
+        ullat = params.get("ullat");
+        lrlat = params.get("lrlat");
+        lonDPP = (lrlon - ullon) * s_l / w;
+        get_raster_info(MapServer.ROOT_ULLON, MapServer.ROOT_ULLAT,
+                MapServer.ROOT_LRLON, MapServer.ROOT_LRLAT,
+                lonDPP, s_l, w, 0, results);
+        System.out.println(results);
         return results;
     }
 
+    private void get_raster_info(
+            double ul_lon, double ul_lat, double lr_lon, double lr_lat,
+            double lonDPP, double refactor, double width, int depth,
+            Map<String, Object> params) {
+        if (depth >= 7) {
+            params.put("raster_ul_lon", ul_lon);
+            params.put("raster_ul_lat", ul_lat);
+            params.put("raster_lr_lon", lr_lon);
+            params.put("raster_lr_lat", lr_lat);
+            params.put("depth", 7);
+        } else {
+            double temp = (lr_lon - ul_lon) * refactor / width;
+            if (temp < lonDPP) {
+                // should calculate other parameters
+                params.put("raster_ul_lon", ul_lon);
+                params.put("raster_ul_lat", ul_lat);
+                params.put("raster_lr_lon", lr_lon);
+                params.put("raster_lr_lat", lr_lat);
+                params.put("depth", depth);
+            } else {
+                get_raster_info(ul_lon, ul_lat, lr_lon, lr_lat,
+                        lonDPP, refactor, depth, depth + 1, params);
+            }
+        }
+    }
 }
