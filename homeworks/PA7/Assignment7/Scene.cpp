@@ -80,7 +80,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
         return Vector3f();
     }
     if (p_inter.m->hasEmission()) {
-        p_inter.m->getEmission();
+        return p_inter.m->getEmission();
     }
 
     Vector3f L_dir, L_indir;
@@ -95,16 +95,16 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
     Vector3f NN = normalize(x_inter.normal);
     Vector3f ws_dir = normalize(x - p);
     float ws_distance = (x - p).norm();
-    Vector3f emit = p_inter.emit;
+    Vector3f emit = x_inter.emit;
     
     //   Shoot a ray from p to x
     Ray ws_ray(p, ws_dir);
     Intersection ws_ray_inter = intersect(ws_ray);
     //   If the ray is not blocked in the middle
-    if (ws_ray_inter.distance - ws_distance >= EPSILON) {
+    if (ws_ray_inter.distance - ws_distance >= -EPSILON) {
         //     L_dir = emit * eval (wo , ws , N) * dot (ws , N) * dot (ws , NN) / |x-p|^2 / pdf_light
         L_dir = emit * p_inter.m->eval(ray.direction, ws_ray.direction, N) *
-                dotProduct(ws_ray.direction, N) * dotProduct(ws_ray.direction, NN) /
+                dotProduct(ws_ray.direction, N) * dotProduct(-ws_ray.direction, NN) /
                 std::pow(ws_distance, 2) / pdf_light;
     }
     //   Test Russian Roulette with probability RussianRoulette
@@ -114,13 +114,13 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
     //   wi = sample (wo , N)
     Vector3f wi_dir = normalize(p_inter.m->sample(ray.direction, N));
     //   Trace a ray r(p, wi)
-    Ray r(p, wi_dir);
-    Intersection q = intersect(r);
+    Ray wi_ray(p, wi_dir);
+    Intersection q = intersect(wi_ray);
     //   If ray r hit a non - emitting object at q
     if (q.happened && !q.m->hasEmission()) {
         //     L_indir = shade (q, wi) * eval (wo , wi , N) * dot (wi , N) / pdf (wo , wi , N) / RussianRoulette
-        L_indir = castRay(r, depth + 1) * p_inter.m->eval(ray.direction, wi_dir, N) *
-                dotProduct(wi_dir, N) / p_inter.m->pdf(ray.direction, wi_dir, N) / RussianRoulette;
+        L_indir = castRay(wi_ray, depth + 1) * p_inter.m->eval(ray.direction, wi_ray.direction, N) *
+                dotProduct(wi_ray.direction, N) / p_inter.m->pdf(ray.direction, wi_ray.direction, N) / RussianRoulette;
     }
     //   Return L_dir + L_indir
     return L_dir + L_indir;
