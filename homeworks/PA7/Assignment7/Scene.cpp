@@ -84,6 +84,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
     }
 
     Vector3f L_dir, L_indir;
+    L_dir = 0.0;
     float pdf_light = M_1_PI / 2;
     Intersection x_inter;
     //   sampleLight ( inter , pdf_light )
@@ -111,6 +112,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
     if (get_random_float() > RussianRoulette) {
         return L_dir;
     }
+    L_indir = 0.0;
     //   wi = sample (wo , N)
     Vector3f wi_dir = normalize(p_inter.m->sample(ray.direction, N));
     //   Trace a ray r(p, wi)

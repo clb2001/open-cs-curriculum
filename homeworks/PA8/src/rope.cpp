@@ -12,11 +12,19 @@ namespace CGL {
     Rope::Rope(Vector2D start, Vector2D end, int num_nodes, float node_mass, float k, vector<int> pinned_nodes)
     {
         // TODO (Part 1): Create a rope starting at `start`, ending at `end`, and containing `num_nodes` nodes.
-
-//        Comment-in this part when you implement the constructor
-//        for (auto &i : pinned_nodes) {
-//            masses[i]->pinned = true;
-//        }
+        // the position of the first node is start, and the position of the last node is end  
+        for (int i = 0; i < num_nodes; i++) {
+            double t = i / (num_nodes - 1);
+            Vector2D pos(start.x * (1 - t) + end.x * t, start.y * (1 - t) + end.y * t);
+            masses.push_back(new Mass(pos, node_mass, false));
+        }
+        for (int i = 0; i < num_nodes - 1; i++) {
+            springs.push_back(new Spring(masses[i], masses[i + 1], k));
+        }
+        // 不是所有的点都要固定
+        for (auto &i : pinned_nodes) {
+            masses[i]->pinned = true;
+        }
     }
 
     void Rope::simulateEuler(float delta_t, Vector2D gravity)
@@ -24,6 +32,9 @@ namespace CGL {
         for (auto &s : springs)
         {
             // TODO (Part 2): Use Hooke's law to calculate the force on a node
+            float dist = (s->m2->position - s->m1->position).norm();
+            s->m1->forces = -s->k * (s->m2->position - s->m1->position) / dist * (dist - s->rest_length);
+            s->m2->forces = -s->k * (s->m1->position - s->m2->position) / dist * (dist - s->rest_length);
         }
 
         for (auto &m : masses)
