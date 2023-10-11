@@ -10,6 +10,13 @@ import java.util.*;
  */
 public class Rasterer {
     private final double s_l = 288200;
+
+    // the overall map
+    private double map_lonDPP;
+    private int tile_size = 256;
+    private int depth = 0;
+
+    // target
     private double lrlon;
     private double ullon;
     private double ullat;
@@ -20,6 +27,7 @@ public class Rasterer {
 
     public Rasterer() {
         // YOUR CODE HERE
+        map_lonDPP = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON) * s_l * 2 / tile_size;
     }
 
     public void mapRaster(Map<String, Object> params) {
@@ -54,48 +62,70 @@ public class Rasterer {
      * "query_success" : Boolean, whether the query was able to successfully complete; don't
      *                    forget to set this to true on success! <br>
      */
+    // 尽量保证分辨率够用（联系自己用地图的习惯，放大到看得见就行）
     public Map<String, Object> getMapRaster(Map<String, Double> params) {
         System.out.println("params: " + params);
         Map<String, Object> results = new HashMap<>();
         lrlon = params.get("lrlon");
         ullon = params.get("ullon");
-        w = params.get("w");
-        h = params.get("h");
+        w = params.get("w"); // longitudinal
+        h = params.get("h"); // latitudinal
         ullat = params.get("ullat");
         lrlat = params.get("lrlat");
-        lonDPP = (lrlon - ullon) * s_l / w;
+        depth = getDepth();
         get_raster_info(MapServer.ROOT_ULLON, MapServer.ROOT_ULLAT,
                 MapServer.ROOT_LRLON, MapServer.ROOT_LRLAT,
-                lonDPP, s_l, w, 0, results);
+                w, h, depth, results);
         System.out.println(results);
         return results;
     }
 
-    private void get_raster_info(
-            double ul_lon, double ul_lat, double lr_lon, double lr_lat,
-            double lonDPP, double refactor, double width, int depth,
-            Map<String, Object> params) {
+    public double getMap_lonDPP() {
+        return map_lonDPP;
+    }
+
+    private void setMap_lonDPP() {
         if (depth >= 7) {
-            params.put("raster_ul_lon", ul_lon);
-            params.put("raster_ul_lat", ul_lat);
-            params.put("raster_lr_lon", lr_lon);
-            params.put("raster_lr_lat", lr_lat);
-            params.put("depth", 7);
+            map_lonDPP = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON) * 288200 / 256 / Math.pow(2, 6);
         } else {
-            double temp = (lr_lon - ul_lon) * refactor / width;
-            if (temp < lonDPP) {
-                // should calculate other parameters
-                params.put("raster_ul_lon", ul_lon);
-                params.put("raster_ul_lat", ul_lat);
-                params.put("raster_lr_lon", lr_lon);
-                params.put("raster_lr_lat", lr_lat);
-                params.put("depth", depth);
-            } else {
-                get_raster_info(ul_lon, ul_lat, lr_lon, lr_lat,
-                        lonDPP, refactor, depth, depth + 1, params);
-
-
-            }
+            map_lonDPP = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON) * 288200 / 256 / Math.pow(2, depth - 1);
         }
+    }
+
+    private double getLonDPP() {
+        return (lrlon - ullon) / w;
+    }
+
+    private int getDepth() {
+        lonDPP = getLonDPP();
+        while (lonDPP < getMap_lonDPP() && depth < 7) {
+            depth += 1;
+            setMap_lonDPP();
+        }
+        return depth;
+    }
+
+    private int getRange(double min, double max, int depth, double value) {
+        // TODO： get range
+        return 0;
+    }
+
+    // 自己一个月前写的代码感觉完全不能看
+    private void get_raster_info(
+            double ul_lon, // LEFT LON
+            double ul_lat, // TOP LAT
+            double lr_lon, // RIGHT LON
+            double lr_lat, // DOWN LAT
+            double width,
+            double height,
+            int depth,
+            Map<String, Object> params) {
+        // 只要确定左上角和右下角节点在哪里就好了
+        int left = getRange(MapServer.ROOT_ULLON, MapServer.ROOT_LRLON, depth, ul_lon);
+        int right = getRange(MapServer.ROOT_ULLON, MapServer.ROOT_LRLON, depth, lr_lon);
+        int up = getRange(MapServer.ROOT_LRLAT, MapServer.ROOT_ULLAT, depth, ul_lat);
+        int down = getRange(MapServer.ROOT_LRLAT, MapServer.ROOT_ULLAT, depth, lr_lat);
+        // TODO: build array
+
     }
 }
