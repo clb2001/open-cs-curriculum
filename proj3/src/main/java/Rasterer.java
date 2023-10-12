@@ -118,7 +118,9 @@ public class Rasterer {
         return depth;
     }
 
+    // 其实这里完全不用设置min和max参数
     private double getRange(double min, double max, int d, double value, boolean flag) {
+        boolean f = false;
         double range = min;
         int level = (int) Math.pow(2, d);
         for (int i = 0; i < level - 1; i++) {
@@ -126,11 +128,16 @@ public class Rasterer {
             double r = min + (double) (i + 1) / level * (max - min);
             if (flag && value > l && value <= r) {
                 range = r;
+                f = true;
                 break;
             } else if (!flag && value >= l && value < r) {
                 range = l;
+                f = true;
                 break;
             }
+        }
+        if (!f) {
+            range = max;
         }
         return range;
     }
