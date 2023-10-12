@@ -1,6 +1,7 @@
 //import com.sun.org.apache.bcel.internal.generic.RETURN;
 
-import java.util.*;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * This class provides all code necessary to take a query box and produce
@@ -9,11 +10,11 @@ import java.util.*;
  * not draw the output correctly.
  */
 public class Rasterer {
-    private final double s_l = 288200;
+    private final double sl = 288200;
 
     // the overall map
-    private double map_lonDPP;
-    private int tile_size = 256;
+    private double mapLonDPP;
+    private int tileSize = 256;
     private int depth;
 
     // target
@@ -61,7 +62,7 @@ public class Rasterer {
     public Map<String, Object> getMapRaster(Map<String, Double> params) {
         Map<String, Object> results = new HashMap<>();
         depth = 0;
-        map_lonDPP = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON) * s_l / tile_size;
+        mapLonDPP = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON) * sl / tileSize;
         lrlon = params.get("lrlon");
         ullon = params.get("ullon");
         w = params.get("w"); // longitudinal
@@ -78,11 +79,11 @@ public class Rasterer {
         results.put("raster_lr_lat", getRange(MapServer.ROOT_LRLAT, MapServer.ROOT_ULLAT,
                 depth, lrlat, false));
         results.put("depth", depth);
-        if (ullon <= lrlon && ullat >= lrlat
+        if (ullon < lrlon && ullat > lrlat
                 && ullon >= MapServer.ROOT_ULLON && lrlon <= MapServer.ROOT_LRLON
                 && ullat <= MapServer.ROOT_ULLAT && lrlat >= MapServer.ROOT_LRLAT) {
             results.put("query_success", true);
-            results.put("render_grid", getRender_grid(ullon, ullat, lrlon, lrlat, depth));
+            results.put("render_grid", getRenderGrid(ullon, ullat, lrlon, lrlat, depth));
         } else {
             results.put("query_success", false);
             results.put("render_grid", null);
@@ -90,34 +91,36 @@ public class Rasterer {
         return results;
     }
 
-    public double getMap_lonDPP() {
-        return map_lonDPP;
+    public double getMapLonDPP() {
+        return mapLonDPP;
     }
 
-    private void setMap_lonDPP() {
+    private void setMapLonDPP() {
         if (depth > 7) {
-            map_lonDPP = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON) * 288200 / 256 / Math.pow(2, 7);
+            mapLonDPP = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON)
+                    * 288200 / 256 / Math.pow(2, 7);
         } else {
-            map_lonDPP = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON) * 288200 / 256 / Math.pow(2, depth);
+            mapLonDPP = (MapServer.ROOT_LRLON - MapServer.ROOT_ULLON)
+                    * 288200 / 256 / Math.pow(2, depth);
         }
     }
 
     private double getLonDPP() {
-        return s_l * (lrlon - ullon) / w;
+        return sl * (lrlon - ullon) / w;
     }
 
     private int getDepth() {
         lonDPP = getLonDPP();
-        while (lonDPP < map_lonDPP && depth < 7) {
+        while (lonDPP < mapLonDPP && depth < 7) {
             depth += 1;
-            setMap_lonDPP();
+            setMapLonDPP();
         }
         return depth;
     }
 
-    private double getRange(double min, double max, int depth, double value, boolean flag) {
+    private double getRange(double min, double max, int d, double value, boolean flag) {
         double range = min;
-        int level = (int)Math.pow(2, depth);
+        int level = (int) Math.pow(2, d);
         for (int i = 0; i < level - 1; i++) {
             double l = min + (double) i / level * (max - min);
             double r = min + (double) (i + 1) / level * (max - min);
@@ -132,17 +135,23 @@ public class Rasterer {
         return range;
     }
 
-    private int getIndex(double min, double max, int depth, double value, boolean flag) {
+    private int getIndex(double min, double max, int d, double value, int flag) {
         int index = 0;
-        int level = (int)Math.pow(2, depth);
+        int level = (int) Math.pow(2, d);
         for (int i = 0; i < level - 1; i++) {
             double l = min + (double) i / level * (max - min);
             double r = min + (double) (i + 1) / level * (max - min);
-            if (flag && value > l && value <= r) {
+            if (flag == 1 && value > l && value <= r) {
+                index = i;
+                break;
+            } else if (flag == 2 && value >= l && value < r) {
                 index = i + 1;
                 break;
-            } else if (!flag && value >= l && value < r) {
-                index = i;
+            } else if (flag == 3 && value > l && value <= r) {
+                index = level - i - 1;
+                break;
+            } else if (flag == 4 && value >= l && value < r) {
+                index = level - i;
                 break;
             }
         }
@@ -150,20 +159,19 @@ public class Rasterer {
     }
 
     // 自己一个月前写的代码感觉完全不能看(已删除)
-    private String[][] getRender_grid(
-            double ul_lon, // LEFT LON
-            double ul_lat, // TOP LAT
-            double lr_lon, // RIGHT LON
-            double lr_lat, // DOWN LAT
-            int depth
+    private String[][] getRenderGrid(
+            double ulLon, // LEFT LON
+            double ulLat, // TOP LAT
+            double lrLon, // RIGHT LON
+            double lrLat, // DOWN LAT
+            int d
     ) {
         // 只要确定左上角和右下角节点在哪里就好了
-        int s = (int)Math.pow(2, depth);
-        int left = getIndex(MapServer.ROOT_ULLON, MapServer.ROOT_LRLON, depth, ul_lon, false);
-        int right = getIndex(MapServer.ROOT_ULLON, MapServer.ROOT_LRLON, depth, lr_lon, true);
-        int up = s - getIndex(MapServer.ROOT_LRLAT, MapServer.ROOT_ULLAT, depth, ul_lat, true);
-        int down = s - getIndex(MapServer.ROOT_LRLAT, MapServer.ROOT_ULLAT, depth, lr_lat, false);
-        return generateArray(left, right, up, down, depth);
+        int left = getIndex(MapServer.ROOT_ULLON, MapServer.ROOT_LRLON, d, ulLon, 1);
+        int right = getIndex(MapServer.ROOT_ULLON, MapServer.ROOT_LRLON, d, lrLon, 2);
+        int up = getIndex(MapServer.ROOT_LRLAT, MapServer.ROOT_ULLAT, d, ulLat, 3);
+        int down = getIndex(MapServer.ROOT_LRLAT, MapServer.ROOT_ULLAT, d, lrLat, 4);
+        return generateArray(left, right, up, down, d);
     }
 
     public static String[][] generateArray(int left, int right, int up, int down, int depth) {
