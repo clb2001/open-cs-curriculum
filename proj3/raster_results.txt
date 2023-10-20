@@ -231,3 +231,27 @@ true
 1 2
 d7_x96_y85.png
 d7_x97_y85.png
+### my adding
+0
+0
+0
+0
+2
+true
+4 4
+d2_x0_y0.png
+d2_x1_y0.png
+d2_x2_y0.png
+d2_x3_y0.png
+d2_x0_y1.png
+d2_x1_y1.png
+d2_x2_y1.png
+d2_x3_y1.png
+d2_x0_y2.png
+d2_x1_y2.png
+d2_x2_y2.png
+d2_x3_y2.png
+d2_x0_y3.png
+d2_x1_y3.png
+d2_x2_y3.png
+d2_x3_y3.png

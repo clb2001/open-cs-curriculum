@@ -145,7 +145,7 @@ public class Rasterer {
     private int getIndex(double min, double max, int d, double value, int flag) {
         int index = 0;
         int level = (int) Math.pow(2, d);
-        for (int i = 0; i < level - 1; i++) {
+        for (int i = 0; i < level; i++) {
             double l = min + (double) i / level * (max - min);
             double r = min + (double) (i + 1) / level * (max - min);
             if (flag == 1 && value > l && value <= r) {
