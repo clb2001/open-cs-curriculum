@@ -1,5 +1,4 @@
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +24,47 @@ public class Router {
      */
     public static List<Long> shortestPath(GraphDB g, double stlon, double stlat,
                                           double destlon, double destlat) {
-        return null; // FIXME
+        PriorityQueue<GraphDB.Node> queue = new PriorityQueue<>(new NodeComparator());
+        GraphDB.Node curr = g.nodes.get(Long.toString(g.closest(stlon, stlat)));
+        GraphDB.Node dest = g.nodes.get(Long.toString(g.closest(destlon, destlat)));
+        queue.add(curr);
+        while (!queue.isEmpty()) {
+            curr = queue.poll();
+            if (Objects.equals(curr.id, dest.id)) {
+                break;
+            }
+            for (String s: curr.adjacentNodes) {
+                GraphDB.Node next = g.nodes.get(s);
+                next.prev = curr;
+                if (curr.prev != null && Objects.equals(curr.prev.id, s)) {
+                    continue;
+                }
+                queue.add(next);
+            }
+        }
+        Stack<Long> stack = new Stack<>();
+        for (GraphDB.Node w = curr; w != null; w = w.prev) {
+            stack.push(Long.parseLong(w.id));
+        }
+        List<Long> res = new ArrayList<>();
+        while (!stack.isEmpty()) {
+            res.add(stack.pop());
+        }
+        return res;
+    }
+
+    private static class NodeComparator implements Comparator<GraphDB.Node> {
+        /*
+         * d(s, v) + ed(v, w) + h(w)
+         * d(s, v): best known distance from s to v
+         * ed(v, w): euclidean distance from v to w
+         * h(w): euclidean distance from w to goal
+         */
+        @Override
+        public int compare(GraphDB.Node node1, GraphDB.Node node2) {
+
+            return 0;
+        }
     }
 
     /**
@@ -37,7 +76,9 @@ public class Router {
      * route.
      */
     public static List<NavigationDirection> routeDirections(GraphDB g, List<Long> route) {
-        return null; // FIXME
+        // optional implement
+        // so I do not implement.
+        return null;
     }
 
 
