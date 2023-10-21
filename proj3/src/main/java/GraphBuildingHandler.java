@@ -4,6 +4,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 /**
@@ -40,6 +41,13 @@ public class GraphBuildingHandler extends DefaultHandler {
     private final GraphDB g;
 
     /**
+     * my adding
+     */
+    private GraphDB.Node lastNode;
+    private LinkedList<String> lastList;
+    private GraphDB.Edge lastEdge;
+
+    /**
      * Create a new GraphBuildingHandler.
      * @param g The graph to populate with the XML data.
      */
@@ -68,52 +76,48 @@ public class GraphBuildingHandler extends DefaultHandler {
         if (qName.equals("node")) {
             /* We encountered a new <node...> tag. */
             activeState = "node";
-//            System.out.println("Node id: " + attributes.getValue("id"));
-//            System.out.println("Node lon: " + attributes.getValue("lon"));
-//            System.out.println("Node lat: " + attributes.getValue("lat"));
-
-            /* TODO Use the above information to save a "node" to somewhere. */
-
             /* Hint: A graph-like structure would be nice. */
-
+            GraphDB.Node node = new GraphDB.Node(
+                    attributes.getValue("id"),
+                    attributes.getValue("lat"),
+                    attributes.getValue("lon"));
+            g.addNode(node); // 这里应该设计成一个哈希表的结构, 相当于一个邻接链表
+            lastNode = node;
         } else if (qName.equals("way")) {
             /* We encountered a new <way...> tag. */
             activeState = "way";
-//            System.out.println("Beginning a way...");
+            GraphDB.Edge edge = new GraphDB.Edge(attributes.getValue("id"));
+            g.addEdge(edge);
+            lastEdge = edge;
+            lastList = new LinkedList<>();
         } else if (activeState.equals("way") && qName.equals("nd")) {
             /* While looking at a way, we found a <nd...> tag. */
-            //System.out.println("Id of a node in this way: " + attributes.getValue("ref"));
-
-            /* TODO Use the above id to make "possible" connections between the nodes in this way */
             /* Hint1: It would be useful to remember what was the last node in this way. */
             /* Hint2: Not all ways are valid. So, directly connecting the nodes here would be
             cumbersome since you might have to remove the connections if you later see a tag that
             makes this way invalid. Instead, think of keeping a list of possible connections and
             remember whether this way is valid or not. */
-
+            // 这个第二个hint很有道理，我也考虑到了这一点，这里只要把所有节点都存下来就好
+            lastList.add(attributes.getValue("ref"));
         } else if (activeState.equals("way") && qName.equals("tag")) {
             /* While looking at a way, we found a <tag...> tag. */
             String k = attributes.getValue("k");
             String v = attributes.getValue("v");
             if (k.equals("maxspeed")) {
-                //System.out.println("Max Speed: " + v);
-                /* TODO set the max speed of the "current way" here. */
+                lastEdge.extraInfo.put(k, v);
             } else if (k.equals("highway")) {
-                //System.out.println("Highway type: " + v);
-                /* TODO Figure out whether this way and its connections are valid. */
                 /* Hint: Setting a "flag" is good enough! */
+                lastEdge.isHighway = ALLOWED_HIGHWAY_TYPES.contains(v);
             } else if (k.equals("name")) {
-                //System.out.println("Way Name: " + v);
+                lastEdge.extraInfo.put(k, v);
             }
-//            System.out.println("Tag with k=" + k + ", v=" + v + ".");
         } else if (activeState.equals("node") && qName.equals("tag") && attributes.getValue("k")
                 .equals("name")) {
             /* While looking at a node, we found a <tag...> with k="name". */
-            /* TODO Create a location. */
             /* Hint: Since we found this <tag...> INSIDE a node, we should probably remember which
             node this tag belongs to. Remember XML is parsed top-to-bottom, so probably it's the
             last node that you looked at (check the first if-case). */
-//            System.out.println("Node's name: " + attributes.getValue("v"));
+            lastNode.extraInfo.put("name", attributes.getValue("v"));
         }
     }
 
@@ -134,7 +138,20 @@ public class GraphBuildingHandler extends DefaultHandler {
             /* We are done looking at a way. (We finished looking at the nodes, speeds, etc...)*/
             /* Hint1: If you have stored the possible connections for this way, here's your
             chance to actually connect the nodes together if the way is valid. */
-//            System.out.println("Finishing a way...");
+            if (lastEdge.isHighway) {
+                if (lastList.size() > 1) {
+                    this.g.addNodeAdj(lastList.get(0), lastList.get(1));
+                    for (int i = 1; i < lastList.size() - 1; i++) {
+                        String last = lastList.get(i - 1);
+                        String tmp = lastList.get(i);
+                        String next = lastList.get(i + 1);
+                        this.g.addNodeAdj(tmp, last);
+                        this.g.addNodeAdj(tmp, next);
+                    }
+                    this.g.addNodeAdj(lastList.get(lastList.size() - 1),
+                            lastList.get(lastList.size() - 2));
+                }
+            }
         }
     }
 
