@@ -11,6 +11,10 @@ import java.util.regex.Pattern;
  * down to the priority you use to order your vertices.
  */
 public class Router {
+    private static GraphDB.Node start;
+    private static GraphDB.Node dest;
+    private static GraphDB graph;
+    private static double best;
     /**
      * Return a List of longs representing the shortest path from the node
      * closest to a start location and the node closest to the destination
@@ -24,18 +28,27 @@ public class Router {
      */
     public static List<Long> shortestPath(GraphDB g, double stlon, double stlat,
                                           double destlon, double destlat) {
-        PriorityQueue<GraphDB.Node> queue = new PriorityQueue<>(new NodeComparator());
-        GraphDB.Node curr = g.nodes.get(Long.toString(g.closest(stlon, stlat)));
-        GraphDB.Node dest = g.nodes.get(Long.toString(g.closest(destlon, destlat)));
+        best = 0;
+        start = g.nodes.get(Long.toString(g.closest(stlon, stlat)));
+        dest = g.nodes.get(Long.toString(g.closest(destlon, destlat)));
+        graph = g;
+        PriorityQueue<ComparableNode> queue = new PriorityQueue<>();
+        ComparableNode curr = new ComparableNode(start.id, 0, null);
         queue.add(curr);
         while (!queue.isEmpty()) {
             curr = queue.poll();
             if (Objects.equals(curr.id, dest.id)) {
                 break;
             }
-            for (String s: curr.adjacentNodes) {
-                GraphDB.Node next = g.nodes.get(s);
-                next.prev = curr;
+            for (String s: graph.nodes.get(curr.id).adjacentNodes) {
+                ComparableNode next = new ComparableNode
+                        (g.nodes.get(s).id,
+                                curr.distance + GraphDB.distance(
+                                        graph.lon(Long.parseLong(curr.id)),
+                                        graph.lat(Long.parseLong(curr.id)),
+                                        graph.lon(Long.parseLong(s)),
+                                        graph.lat(Long.parseLong(s))),
+                                curr);
                 if (curr.prev != null && Objects.equals(curr.prev.id, s)) {
                     continue;
                 }
@@ -43,7 +56,7 @@ public class Router {
             }
         }
         Stack<Long> stack = new Stack<>();
-        for (GraphDB.Node w = curr; w != null; w = w.prev) {
+        for (ComparableNode w = curr; w != null; w = w.prev) {
             stack.push(Long.parseLong(w.id));
         }
         List<Long> res = new ArrayList<>();
@@ -53,17 +66,39 @@ public class Router {
         return res;
     }
 
-    private static class NodeComparator implements Comparator<GraphDB.Node> {
-        /*
-         * d(s, v) + ed(v, w) + h(w)
-         * d(s, v): best known distance from s to v
-         * ed(v, w): euclidean distance from v to w
-         * h(w): euclidean distance from w to goal
-         */
-        @Override
-        public int compare(GraphDB.Node node1, GraphDB.Node node2) {
+    // 这里被卡住的一点在于，hw4是直接对优先级队列设置一个比较器（Comparator），
+    // 在比较器内定义了比较规则。但是我们这里，优先级并没有作为一个属性在原来的node类中给出。
+    // 所以无法通过优先级来比较。如果强行在原来的node中定义优先级，又会让代码变得复杂。
+    // 这里参考了网上的做法，可以考虑直接定义进入优先级队列的元素（比较手段），不一定要把node传进去。
+    // 昨天晚上一直在想怎么传首末节点和best，后来想到可以将它们设置为静态类型
+    /*
+     * d(s, v) + ed(v, w) + h(w)
+     * d(s, v): best known distance from s to v
+     * ed(v, w): euclidean distance from v to w
+     * h(w): euclidean distance from w to goal
+     */
+    private static class ComparableNode implements Comparable<ComparableNode> {
+        private String id;
+        private double distance;
+        private double priority;
+        ComparableNode prev = null;
 
-            return 0;
+        private ComparableNode(String i, double d, ComparableNode r) {
+            id = i;
+            distance = d;
+            priority = distance + distToDest(this);
+            prev = r;
+        }
+
+        @Override
+        public int compareTo(ComparableNode comparableNode) {
+            return Double.compare(this.priority, comparableNode.priority);
+        }
+
+        private double distToDest(ComparableNode node) {
+            GraphDB.Node n = graph.nodes.get(node.id);
+            return GraphDB.distance(Double.parseDouble(n.lon), Double.parseDouble(n.lat),
+                    Double.parseDouble(dest.lon), Double.parseDouble(dest.lat));
         }
     }
 
