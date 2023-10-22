@@ -25,9 +25,12 @@ import java.util.HashMap;
 public class GraphDB {
     /** Your instance variables for storing the graph. You should consider
      * creating helper classes, e.g. Node, Edge, etc. */
-    public final Map<String, Node> nodes = new LinkedHashMap<>();
-    public final Map<String, Edge> edges = new LinkedHashMap<>();
+    private final Map<String, Node> nodes = new LinkedHashMap<>();
+    private final Map<String, Edge> edges = new LinkedHashMap<>();
 
+    public Map<String, Node> getNodes() {
+        return nodes;
+    }
     /**
      * Example constructor shows how to create and start an XML parser.
      * You do not need to modify this constructor, but you're welcome to do so.
@@ -198,7 +201,7 @@ public class GraphDB {
         this.nodes.get(id).adjacentNodes.add(adjId);
     }
 
-    static class Node {
+    public static class Node {
         String id;
         String lat;
         String lon;

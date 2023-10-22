@@ -1,4 +1,10 @@
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Objects;
+import java.util.HashMap;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,7 +20,6 @@ public class Router {
     private static GraphDB.Node start;
     private static GraphDB.Node dest;
     private static GraphDB graph;
-    private static double best;
     /**
      * Return a List of longs representing the shortest path from the node
      * closest to a start location and the node closest to the destination
@@ -28,30 +33,31 @@ public class Router {
      */
     public static List<Long> shortestPath(GraphDB g, double stlon, double stlat,
                                           double destlon, double destlat) {
-        best = 0;
-        start = g.nodes.get(Long.toString(g.closest(stlon, stlat)));
-        dest = g.nodes.get(Long.toString(g.closest(destlon, destlat)));
+        start = g.getNodes().get(Long.toString(g.closest(stlon, stlat)));
+        dest = g.getNodes().get(Long.toString(g.closest(destlon, destlat)));
         graph = g;
         PriorityQueue<ComparableNode> queue = new PriorityQueue<>();
+        // 这个问题要注意到，一个节点最多经过一次，否则就是绕远路了
+        Map<String, Boolean> mark = new HashMap<>();
         ComparableNode curr = new ComparableNode(start.id, 0, null);
         queue.add(curr);
         while (!queue.isEmpty()) {
             curr = queue.poll();
+            // 要等出队列才能算经过
+            mark.put(curr.id, true);
             if (Objects.equals(curr.id, dest.id)) {
                 break;
             }
-            for (String s: graph.nodes.get(curr.id).adjacentNodes) {
-                ComparableNode next = new ComparableNode
-                        (g.nodes.get(s).id,
-                                curr.distance + GraphDB.distance(
-                                        graph.lon(Long.parseLong(curr.id)),
-                                        graph.lat(Long.parseLong(curr.id)),
-                                        graph.lon(Long.parseLong(s)),
-                                        graph.lat(Long.parseLong(s))),
-                                curr);
-                if (curr.prev != null && Objects.equals(curr.prev.id, s)) {
+            for (String s: graph.getNodes().get(curr.id).adjacentNodes) {
+                if (mark.containsKey(s) && mark.get(s)) {
                     continue;
                 }
+                ComparableNode next = new ComparableNode(g.getNodes().get(s).id,
+                        curr.distance + GraphDB.distance(
+                                graph.lon(Long.parseLong(curr.id)),
+                                graph.lat(Long.parseLong(curr.id)),
+                                graph.lon(Long.parseLong(s)),
+                                graph.lat(Long.parseLong(s))), curr);
                 queue.add(next);
             }
         }
@@ -81,7 +87,7 @@ public class Router {
         private String id;
         private double distance;
         private double priority;
-        ComparableNode prev = null;
+        private ComparableNode prev = null;
 
         private ComparableNode(String i, double d, ComparableNode r) {
             id = i;
@@ -96,7 +102,7 @@ public class Router {
         }
 
         private double distToDest(ComparableNode node) {
-            GraphDB.Node n = graph.nodes.get(node.id);
+            GraphDB.Node n = graph.getNodes().get(node.id);
             return GraphDB.distance(Double.parseDouble(n.lon), Double.parseDouble(n.lat),
                     Double.parseDouble(dest.lon), Double.parseDouble(dest.lat));
         }
