@@ -45,7 +45,8 @@ public class CapersRepository {
     public static void writeStory(String text) {
         text = Utils.readContentsAsString(CAPERS_FOLDER) + text + "\n";
         Utils.writeContents(CAPERS_FOLDER, text);
-        System.out.print(Utils.readContentsAsString(CAPERS_FOLDER));
+//        System.out.print(Utils.readContentsAsString(CAPERS_FOLDER));
+        System.out.print(text);
     }
 
     /**
