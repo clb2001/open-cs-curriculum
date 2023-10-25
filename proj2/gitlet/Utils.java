@@ -236,4 +236,19 @@ class Utils {
         System.out.printf(msg, args);
         System.out.println();
     }
+
+    /* my method */
+    static File getFile(String filename) {
+        if (Repository.CWD.exists() && Repository.CWD.isDirectory()) {
+            File[] files = Repository.CWD.listFiles();
+            if (files != null) {
+                for (File file: files) {
+                    if (file.isFile() && file.getName().equals(filename)) {
+                        return file;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 }

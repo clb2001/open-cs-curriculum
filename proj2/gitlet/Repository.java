@@ -1,6 +1,9 @@
 package gitlet;
 
 import java.io.File;
+import java.util.TreeMap;
+import java.util.Map;
+
 import static gitlet.Utils.*;
 
 // TODO: any imports you need here
@@ -26,6 +29,7 @@ public class Repository {
     public static final File GITLET_DIR = join(CWD, ".gitlet");
     /* The active branch */
     private static final File HEAD_DIR = new File(CWD, "HEAD");
+    private static final File INDEX_DIR = new File(CWD, "index");
     /* reference directory */
     private static final File REFS_DIR = new File(GITLET_DIR, "refs");
     /* objects directory */
@@ -36,27 +40,81 @@ public class Repository {
     /* some important variables */
     private static final String activating_branch = "master";
 
-    // TODO: how to design the structure of branch?
+    /* these areas are stored in /index */
+    private static TreeMap<String, Object> addition_area;
+    private static TreeMap<String, Object> removal_area;
 
+    // TODO: how to design the structure of branch?
+    private static Commit get_activating_commit() {
+        String activating_commit_sha1 = Utils.readContentsAsString(
+                Utils.join(HEADS_DIR, activating_branch));
+        return Utils.readObject(Utils.join(OBJECTS_DIR, activating_commit_sha1), Commit.class);
+    }
+
+    private static Blob get_blob_from_tree(Tree tree, String SHA1) {
+        if (tree.getBlobs() == null) {
+            return null;
+        } else {
+            for (Map.Entry<String, Blob> entry : tree.getBlobs().entrySet()) {
+                if (entry.getKey().equals(SHA1)) {
+                    return entry.getValue();
+                }
+            }
+            for (Map.Entry<String, Tree> entry : tree.getTrees().entrySet()) {
+                return get_blob_from_tree(entry.getValue(), SHA1);
+            }
+        }
+    }
+
+    private static Blob get_blob_from_commit(Commit commit, String SHA1) {
+        return get_blob_from_tree(commit.getTree(), SHA1);
+    }
+
+    // 定义几条规则：
+    // 1、commit和tree的索引全部都要在初始化结束之后，以初始化的对象为标准进行定义
+    // 2、blob的索引要根据文件名和文件内容一起定义
     /* TODO: fill in the rest of this class. */
     /*
      * init主要做三件事情：创建对象、引用文件夹，以及写入文件分支
      */
     public static void init() {
-        boolean mkdir_res = GITLET_DIR.mkdir();
-        if (mkdir_res) {
-            REFS_DIR.mkdir();
-            HEADS_DIR.mkdir();
-            OBJECTS_DIR.mkdir();
-            Utils.writeContents(HEAD_DIR, "ref: " + HEADS_DIR + "/" + activating_branch);
-            // TODO: initial commit
-        } else {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
-        }
+        try {
+            boolean mkdir_res = GITLET_DIR.mkdir();
+            if (!mkdir_res) {
+                throw new GitletException("A Gitlet version-control system already exists in the current directory.");
+            }
+            REFS_DIR.mkdirs();
+            HEADS_DIR.mkdirs();
+            OBJECTS_DIR.mkdirs();
+            Commit init_commit = new Commit(null, null, null,
+                    "00:00:00 UTC, Thursday, 1 January 1970", null);
+            String initial_sha1 = Utils.sha1(init_commit);
+            init_commit.setSHA1(initial_sha1);
+            Utils.writeContents(HEAD_DIR, activating_branch);
+            Utils.writeContents(Utils.join(HEADS_DIR, activating_branch), initial_sha1);
+            Utils.writeObject(Utils.join(OBJECTS_DIR, initial_sha1), init_commit);
+        } catch (GitletException ignored) {}
     }
 
     public static void add(String filename) {
-
+        addition_area = Utils.readObject(INDEX_DIR, TreeMap.class);
+        try {
+            File file = Utils.getFile(filename);
+            if (file == null) {
+                throw new GitletException("File does not exist.");
+            }
+            String res_sha1 = Utils.sha1(filename, Utils.readContents(file));
+            Commit activating_commit = get_activating_commit();
+            Blob blob = get_blob_from_commit(activating_commit, res_sha1);
+            if (!blob.getSHA1().equals(res_sha1)) {
+                // 如果不相等，就把内容写入addition_area中
+                addition_area.put(res_sha1, new Blob(res_sha1, filename, Utils.readContents(file)));
+            } else {
+                // 如果相等，且暂存区存在相关快照，则删除相关记录
+                addition_area.remove(res_sha1);
+            }
+            Utils.writeObject(INDEX_DIR, addition_area);
+        } catch (GitletException ignored) {}
     }
 
     public static void commit(String message) {
