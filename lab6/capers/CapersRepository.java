@@ -18,7 +18,8 @@ public class CapersRepository {
     static final File CWD = new File(System.getProperty("user.dir"));
 
     /** Main metadata folder. */
-    static final File CAPERS_FOLDER = Utils.join(CWD, ".capers/story");
+    static final File CAPERS_DIR = Utils.join(CWD, ".capers");
+    static final File CAPERS_FOLDER = Utils.join(CAPERS_DIR, "story");
 
     /**
      * Does required filesystem operations to allow for persistence.
@@ -31,6 +32,7 @@ public class CapersRepository {
      */
     public static void setupPersistence() {
         try {
+            CAPERS_DIR.mkdirs();
             CAPERS_FOLDER.createNewFile();
         } catch (IOException e) {
             throw new RuntimeException(e);
