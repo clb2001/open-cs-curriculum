@@ -70,7 +70,7 @@ public class CapersRepository {
      */
     public static void celebrateBirthday(String name) {
         Dog dog = Dog.fromFile(name);
-        System.out.println(dog);
         dog.haveBirthday();
+        dog.saveDog();
     }
 }
