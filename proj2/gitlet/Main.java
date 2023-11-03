@@ -3,6 +3,8 @@ package gitlet;
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author Libin Cheng
  */
+
+// debug: python3 tester.py --debug samples/test01-init.in
 public class Main {
 
     /** Usage: java gitlet.Main ARGS, where ARGS contains
@@ -17,7 +19,6 @@ public class Main {
         String commit_id;
         switch(firstArg) {
             case "init":
-                // TODO: handle the `init` command
                 validateNumArgs("init", args, 1);
                 Repository.init();
                 break;
