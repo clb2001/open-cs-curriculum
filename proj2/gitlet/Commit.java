@@ -36,6 +36,14 @@ public class Commit implements Serializable {
         this.SHA1 = SHA1;
     }
 
+    public Commit(Commit commit) {
+        this.parent = commit;
+        this.tree = commit.tree;
+        this.message = null;
+        this.timestamp = null;
+        this.SHA1 = null;
+    }
+
     public String getSHA1() {
         return SHA1;
     }
@@ -59,4 +67,8 @@ public class Commit implements Serializable {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    public String getTimestamp() { return timestamp; }
+
+    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
 }

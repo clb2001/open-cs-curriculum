@@ -36,6 +36,8 @@ public class Main {
      *
      * @param args arguments from the command line
      */
+
+    // 重新下了一个jdk21,发现idea不支持，又重新下载了一个jdk18
     public static void main(String[] args) {
         if (args.length == 0) {
             Utils.exitWithError("Must have at least one argument");

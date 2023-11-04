@@ -19,9 +19,14 @@ public class Blob implements Serializable {
         return SHA1;
     }
 
+    // blob的哈希值由文件名和文件内容决定
     public void setSHA1() {
         this.SHA1 = Utils.sha1();
     }
+
+    public String getPath() { return path; }
+
+    public void setPath() { this.path = path; }
 
     public Object getContent() {
         return content;
