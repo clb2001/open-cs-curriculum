@@ -3,7 +3,7 @@ package gitlet;
 // TODO: any imports you need here
 
 import java.io.Serializable;
-import java.util.Date; // TODO: You'll likely use this in this class
+import java.util.*;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -20,17 +20,17 @@ public class Commit implements Serializable {
      * variable is used. We've provided one example for `message`.
      */
     /* 将其联想为一个树状结构 */
-    private Commit parent = null;
-    private Tree tree = null; // 这个tree只能指向根目录
+    private Commit parent;
     /** The message of this Commit. */
     private String message;
     private String SHA1;
-    private String timestamp = "00:00:00 UTC, Thursday, 1 January 1970";
+    private String timestamp;
+    private TreeMap<String, Blob> blobs; // String表示文件的哈希值
 
     /* TODO: fill in the rest of this class. */
-    public Commit(Commit parent, Tree tree, String message, String timestamp, String SHA1) {
+    public Commit(Commit parent, TreeMap<String, Blob> blobs, String message, String timestamp, String SHA1) {
         this.parent = parent;
-        this.tree = tree;
+        this.blobs = blobs;
         this.message = message;
         this.timestamp = timestamp;
         this.SHA1 = SHA1;
@@ -38,11 +38,15 @@ public class Commit implements Serializable {
 
     public Commit(Commit commit) {
         this.parent = commit;
-        this.tree = commit.tree;
+        this.blobs = commit.blobs;
         this.message = null;
         this.timestamp = null;
         this.SHA1 = null;
     }
+
+    public Commit getParent() { return parent; }
+
+    public void setParent(Commit parent) { this.parent = parent; }
 
     public String getSHA1() {
         return SHA1;
@@ -50,14 +54,6 @@ public class Commit implements Serializable {
 
     public void setSHA1(String SHA1) {
         this.SHA1 = Utils.sha1(SHA1);
-    }
-
-    public Tree getTree() {
-        return tree;
-    }
-
-    public void setTree(Tree tree) {
-        this.tree = tree;
     }
 
     public String getMessage() {
@@ -71,4 +67,21 @@ public class Commit implements Serializable {
     public String getTimestamp() { return timestamp; }
 
     public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+
+    public TreeMap<String, Blob> getBlobs() { return blobs; }
+
+    public void setBlobs(TreeMap<String, Blob> blobs) { this.blobs = blobs; }
+
+    // <路径--哈希值 键值对>
+    public TreeMap<String, String> getPaths() {
+        if (blobs != null) {
+            TreeMap<String, String> path_map= new TreeMap<>();
+            for (Map.Entry<String, Blob> entry: blobs.entrySet()) {
+                path_map.put(entry.getValue().getPath(), entry.getKey());
+            }
+            return path_map;
+        } else {
+            return null;
+        }
+    }
 }
