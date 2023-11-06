@@ -1,22 +1,21 @@
 package gitlet;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
 import static gitlet.Utils.*;
 
-// TODO: any imports you need here
-
 /** Represents a gitlet repository.
- *  TODO: It's a good idea to give a description here of what else this Class
+ *  a bit complicating project for me
  *  does at a high level.
  *
- *  @author TODO
+ *  @author Libin Cheng
  */
 public class Repository {
     /**
-     * TODO: add instance variables here.
+     * mainly path and macro
      *
      * List all instance variables of the Repository class here with a useful
      * comment above them describing what that variable represents and how that
@@ -41,13 +40,13 @@ public class Repository {
     private static final File HEADS_DIR = new File(REFS_DIR, "heads");
 
     /* some important variables */
-    private static final String activating_branch = "master";
+    private static String activating_branch = "master";
 
     /* these areas are stored in /index */
     private static TreeMap<String, Blob> addition_area;
     private static TreeMap<String, Blob> removal_area;
 
-    private static Commit get_activating_commit() {
+    private static Commit get_current_commit() {
         String activating_commit_sha1 = Utils.readContentsAsString(
                 Utils.join(HEADS_DIR, activating_branch));
         return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, activating_commit_sha1), Commit.class);
@@ -76,12 +75,14 @@ public class Repository {
 
     private static String get_time() {
         // 这里的时间格式有问题
-        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss zzz, EEEE, d MMMM yyyy");
-        return dateFormat.format(new Date());
+        Date currentTime = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("E MMM d HH:mm:ss yyyy Z");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8"));
+        return dateFormat.format(currentTime);
     }
 
     private static Commit refreshed_commit() {
-        Commit new_commit = new Commit(get_activating_commit());
+        Commit new_commit = new Commit(get_current_commit());
         TreeMap<String, String> path_SHA1 = new_commit.getPaths();
         if (path_SHA1 == null) {
             new_commit.setBlobs(new TreeMap<>());
@@ -117,6 +118,42 @@ public class Repository {
         return new_commit;
     }
 
+    private static Commit get_commit_from_objects(String commit_id) {
+        try {
+            List<String> dirs = Utils.plainFilenamesIn(COMMIT_OBJECTS_DIR);
+            if (dirs != null && !dirs.contains(commit_id)) {
+                throw new GitletException("No commit with that id exists.");
+            }
+            return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, commit_id), Commit.class);
+        } catch (GitletException ignored) { return null; } // 这么写有什么问题？
+    }
+
+    private static void process_commit(Commit current_commit, Commit target_commit) {
+        // untracked如何实现？需要注意到，当前commit所包含的blob必须是准备切换的blob的超集
+        TreeMap<String, String> current_paths = current_commit.getPaths();
+        TreeMap<String, String> target_paths = target_commit.getPaths();
+        for (Map.Entry<String, String> entry: target_paths.entrySet()) {
+            String target_path = entry.getKey();
+            if (!current_paths.containsKey(target_path)) {
+                System.out.println("There is an untracked file in the way; " +
+                        "delete it, or add and commit it first.");
+                System.exit(1);
+            }
+            String current_SHA1 = current_paths.get(target_path);
+            Blob target_blob = target_commit.getBlobs().get(current_SHA1);
+            Utils.writeContents(Objects.requireNonNull(getFile(target_blob.getPath())),
+                    target_blob.getContent());
+        }
+        for (Map.Entry<String, String> entry: current_paths.entrySet()) {
+            String current_path = entry.getKey();
+            if (!target_paths.containsKey(current_path)) {
+                Utils.restrictedDelete(current_path);
+            }
+        }
+        Utils.writeObject(ADD_INDEX, null);
+        Utils.writeObject(REMOVE_INDEX, null);
+    }
+
     // 定义几条规则：
     // 1、commit的索引全部都要在初始化结束之后，以初始化的对象为标准进行定义
     // 2、blob的索引要根据文件名和文件内容一起定义
@@ -130,8 +167,8 @@ public class Repository {
             if (!mkdir_DIR) {
                 throw new GitletException("A Gitlet version-control system already exists in the current directory.");
             }
-            Commit init_commit = new Commit(null, null, null,
-                    "00:00:00 UTC, Thursday, 1 January 1970", null);
+            Commit init_commit = new Commit(null, null, "initial commit",
+                    "Wed Dec 31 16:00:00 1969 -0800", null);
             // 一个API没看到浪费了好长时间, 一个逻辑运算符弄错浪费了好长时间
             String initial_sha1 = Utils.sha1(Utils.serialize(init_commit));
             init_commit.setSHA1(initial_sha1);
@@ -153,7 +190,7 @@ public class Repository {
                 throw new GitletException("File does not exist.");
             }
             String res_sha1 = Utils.sha1(filename, Utils.readContents(file));
-            Commit activating_commit = get_activating_commit();
+            Commit activating_commit = get_current_commit();
             Blob blob = get_blob_from_commit(activating_commit, res_sha1);
             if (blob == null || !blob.getSHA1().equals(res_sha1)) {
                 // 如果不相等，就把内容写入addition_area中
@@ -203,7 +240,7 @@ public class Repository {
                 addition_area.remove(addition_blob.getSHA1());
                 return;
             }
-            Commit activating_commit = get_activating_commit();
+            Commit activating_commit = get_current_commit();
             TreeMap<String, String> path_map = activating_commit.getPaths();
             String SHA1 = path_map.get(filename);
             if (SHA1 != null) {
@@ -229,7 +266,7 @@ public class Repository {
 
     // 这个是打印当前分支的日志消息
     public static void log() {
-        Commit commit = get_activating_commit();
+        Commit commit = get_current_commit();
         while (commit != null) {
             print_log(commit);
             commit = commit.getParent();
@@ -304,20 +341,45 @@ public class Repository {
         System.out.println("\n");
     }
 
-    //  切换到指定分支
-    public static void checkout(String branch_name) {
-
-        return;
+    //  切换到指定分支(为什么这个功能实现得这么复杂？)
+    public static void checkout_branch(String branch_name) {
+        try {
+            if (Objects.equals(branch_name, activating_branch)) {
+                throw new GitletException("No need to checkout the current branch.");
+            }
+            List<String> dirs = Utils.plainFilenamesIn(HEADS_DIR);
+            if (dirs != null && !dirs.contains(branch_name)) {
+                throw new GitletException("No such branch exists.");
+            }
+            Commit current_commit = get_current_commit();
+            Commit target_commit = Utils.readObject(Utils.join(HEADS_DIR, branch_name), Commit.class);
+            process_commit(current_commit, target_commit);
+            Utils.writeContents(HEAD, branch_name);
+        } catch (GitletException ignored) {}
     }
 
     // 将文件切换回上次commit时的版本
-    public static void checkout(File file) {
-
+    public static void checkout_file(String filename) {
+        try {
+            Commit commit = get_current_commit();
+            Blob blob = get_blob_from_area(commit.getBlobs(), filename);
+            if (blob == null) {
+                throw new GitletException("File does not exist in that commit.");
+            }
+            Utils.writeContents(Objects.requireNonNull(getFile(filename)), blob.getContent());
+        } catch (GitletException ignored) {}
     }
 
     // 将文件切换回指定commit id时的版本
-    public static void checkout(String commit_id, File file) {
-
+    public static void checkout_commit(String commit_id, String filename) {
+        try {
+            Commit commit = get_commit_from_objects(commit_id);
+            Blob blob = get_blob_from_area(commit.getBlobs(), filename);
+            if (blob == null) {
+                throw new GitletException("File does not exist in that commit.");
+            }
+            Utils.writeContents(Objects.requireNonNull(getFile(filename)), blob.getContent());
+        } catch (GitletException ignored) {}
     }
 
     public static void branch(String branch_name) {
@@ -325,7 +387,7 @@ public class Repository {
             if (Objects.equals(branch_name, activating_branch)) {
                 throw new GitletException("A branch with that name already exists.");
             }
-            Commit commit = get_activating_commit();
+            Commit commit = get_current_commit();
             Utils.writeContents(Utils.join(HEADS_DIR, branch_name), commit.getSHA1());
         } catch (GitletException ignored) {}
     }
@@ -345,18 +407,14 @@ public class Repository {
     // 这个reset需要注意一下，不是很好写
     public static void reset(String commit_id) {
         try {
-            List<String> files = Utils.plainFilenamesIn(COMMIT_OBJECTS_DIR);
-            if (files != null && !files.contains(commit_id)) {
-                throw new GitletException("No commit with that id exists.");
-            }
-            // 如果存在冲突
-            if (files != null && files.contains(commit_id)) {
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                System.exit(1);
-            }
+            Commit current_commit = get_current_commit();
+            Commit target_commit = get_commit_from_objects(commit_id);
+            process_commit(current_commit, target_commit);
+            Utils.writeContents(Utils.join(HEADS_DIR, activating_branch), commit_id);
         } catch (GitletException ignored) {}
     }
 
+    //  应该算最复杂的一个函数了
     public static void merge(String branch_name) {
 
     }

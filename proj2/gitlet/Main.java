@@ -4,7 +4,7 @@ package gitlet;
  *  @author Libin Cheng
  */
 
-// debug: python3 tester.py --debug --verbose samples/test01-init.in
+// debug: in ./testing python3 tester.py --debug --verbose samples/test01-init.in
 public class Main {
 
     /** Usage: java gitlet.Main ARGS, where ARGS contains
@@ -55,11 +55,11 @@ public class Main {
                 break;
             case "checkout":
                 if (args.length == 2) {
-                    Repository.checkout(args[1]);
+                    Repository.checkout_branch(args[1]);
                 } else if (args.length == 3) {
-                    Repository.checkout(Utils.getFile(args[2]));
+                    Repository.checkout_file(args[2]);
                 } else if (args.length == 4) {
-                    Repository.checkout(args[1], Utils.getFile(args[3]));
+                    Repository.checkout_commit(args[1], args[3]);
                 } else {
                     throw new RuntimeException("Invalid number of arguments for: checkout");
                 }
@@ -75,7 +75,6 @@ public class Main {
                 Repository.rm_branch(branch_name);
                 break;
             case "reset":
-                // TODO: handle the 'reset' command
                 validateNumArgs("reset", args, 2);
                 commit_id = args[1];
                 Repository.reset(commit_id);
