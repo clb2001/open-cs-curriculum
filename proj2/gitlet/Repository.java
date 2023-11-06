@@ -49,7 +49,9 @@ public class Repository {
     private static Commit get_current_commit() {
         String activating_commit_sha1 = Utils.readContentsAsString(
                 Utils.join(HEADS_DIR, activating_branch));
-        return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, activating_commit_sha1), Commit.class);
+        Commit current_commit = Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, activating_commit_sha1),
+                Commit.class);
+        return current_commit;
     }
 
     private static Blob get_blob_from_area(TreeMap<String, Blob> area, String path) {
@@ -74,9 +76,10 @@ public class Repository {
     }
 
     private static String get_time() {
-        // 这里的时间格式有问题
+        // 这里的时间格式有问题--但是改个语言差点把内核玩崩了
         Date currentTime = new Date();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("E MMM d HH:mm:ss yyyy Z");
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "E MMM d HH:mm:ss yyyy Z", java.util.Locale.ENGLISH);
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT-8"));
         return dateFormat.format(currentTime);
     }
@@ -96,9 +99,9 @@ public class Repository {
         if (addition_area != null) {
             for (Map.Entry<String, Blob> entry: addition_area.entrySet()) {
                 if (path_SHA1 != null) {
-                    String sha1 = path_SHA1.get(entry.getValue().getSHA1());
-                    if (sha1 != null) {
-                        new_commit.getBlobs().remove(sha1);
+                    String path = entry.getValue().getPath();
+                    if (path_SHA1.containsKey(path)) {
+                        new_commit.getBlobs().remove(path_SHA1.get(path));
                     }
                 }
                 new_commit.getBlobs().put(entry.getKey(), entry.getValue());
@@ -154,6 +157,25 @@ public class Repository {
         Utils.writeObject(REMOVE_INDEX, null);
     }
 
+    private static void awake_area() {
+        if (!ADD_INDEX.exists()) {
+            addition_area = new TreeMap<>();
+        } else {
+            addition_area = Utils.readObject(ADD_INDEX, TreeMap.class);
+            if (addition_area == null) {
+                addition_area = new TreeMap<>();
+            }
+        }
+        if (!REMOVE_INDEX.exists()) {
+            removal_area = new TreeMap<>();
+        } else {
+            removal_area = Utils.readObject(ADD_INDEX, TreeMap.class);
+            if (removal_area == null) {
+                removal_area = new TreeMap<>();
+            }
+        }
+    }
+
     // 定义几条规则：
     // 1、commit的索引全部都要在初始化结束之后，以初始化的对象为标准进行定义
     // 2、blob的索引要根据文件名和文件内容一起定义
@@ -173,17 +195,13 @@ public class Repository {
             String initial_sha1 = Utils.sha1(Utils.serialize(init_commit));
             init_commit.setSHA1(initial_sha1);
             Utils.writeContents(HEAD, activating_branch);
-            Utils.writeContents(Utils.join(HEADS_DIR, activating_branch), initial_sha1);
             Utils.writeObject(Utils.join(COMMIT_OBJECTS_DIR, initial_sha1), init_commit);
+            Utils.writeContents(Utils.join(HEADS_DIR, activating_branch), initial_sha1);
         } catch (GitletException ignored) {}
     }
 
     public static void add(String filename) {
-        if (!ADD_INDEX.exists()) {
-            addition_area = new TreeMap<>();
-        } else {
-            addition_area = Utils.readObject(ADD_INDEX, TreeMap.class);
-        }
+        awake_area();
         try {
             File file = Utils.getFile(filename);
             if (file == null) {
@@ -227,12 +245,13 @@ public class Repository {
             new_commit.setSHA1(new_sha1);
             Utils.writeContents(Utils.join(HEADS_DIR, activating_branch), new_sha1);
             Utils.writeObject(Utils.join(COMMIT_OBJECTS_DIR, new_sha1), new_commit);
-            addition_area = null;
-            removal_area = null;
+            Utils.writeObject(ADD_INDEX, null);
+            Utils.writeObject(REMOVE_INDEX, null);
         } catch (GitletException ignored) {}
     }
 
     public static void rm(String filename) {
+        awake_area();
         try {
             // 需要根据文件名返回Blob
             Blob addition_blob = get_blob_from_area(addition_area, filename);

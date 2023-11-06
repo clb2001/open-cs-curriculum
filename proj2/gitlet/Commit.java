@@ -1,19 +1,17 @@
 package gitlet;
 
-// TODO: any imports you need here
-
 import java.io.Serializable;
 import java.util.*;
 
 /** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
+ *  none, thanks
  *  does at a high level.
  *
  *  @author Libin Cheng
  */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
+     *
      *
      * List all instance variables of the Commit class here with a useful
      * comment above them describing what that variable represents and how that
@@ -53,7 +51,8 @@ public class Commit implements Serializable {
     }
 
     public void setSHA1(String SHA1) {
-        this.SHA1 = Utils.sha1(SHA1);
+        // 草，我怎么会用Utils.sha1()这么愚蠢的方法？是说为什么每次返回的sha1都不一样
+        this.SHA1 = SHA1;
     }
 
     public String getMessage() {
@@ -72,7 +71,7 @@ public class Commit implements Serializable {
 
     public void setBlobs(TreeMap<String, Blob> blobs) { this.blobs = blobs; }
 
-    // <路径--哈希值 键值对>
+    // <路径->哈希值 键值对>
     public TreeMap<String, String> getPaths() {
         if (blobs != null) {
             TreeMap<String, String> path_map= new TreeMap<>();
