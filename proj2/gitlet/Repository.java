@@ -47,9 +47,9 @@ public class Repository {
     private static TreeMap<String, Blob> removal_area;
     private static TreeMap<String, Blob> untracked_area;
 
-    private static TreeMap<String, Blob> get_untracked_area() {
-        // 遍历CWD文件，除掉
-    }
+//    private static TreeMap<String, Blob> get_untracked_area() {
+//        // 遍历CWD文件，除掉
+//    }
 
     private static Commit get_current_commit() {
         String activating_commit_sha1 = Utils.readContentsAsString(
@@ -508,6 +508,6 @@ public class Repository {
 
     //  应该算最复杂的一个函数了
     public static void merge(String branch_name) {
-
+        // 多叉树的最近公共祖先
     }
 }
