@@ -76,7 +76,7 @@ public class Commit implements Serializable {
         if (blobs != null) {
             TreeMap<String, String> path_map= new TreeMap<>();
             for (Map.Entry<String, Blob> entry: blobs.entrySet()) {
-                path_map.put(entry.getValue().getPath(), entry.getKey());
+                path_map.put(entry.getValue().getFilename(), entry.getKey());
             }
             return path_map;
         } else {

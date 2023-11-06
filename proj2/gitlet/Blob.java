@@ -6,12 +6,12 @@ import java.io.Serializable;
 // 跟做科研一样，有想法了就做，不要怕做不好，不会做，先做再说
 public class Blob implements Serializable {
     private String SHA1;
-    private String path;
+    private String filename;
     private Object content;
 
-    public Blob(String SHA1, String path, Object content) {
+    public Blob(String SHA1, String filename, Object content) {
         this.SHA1 = SHA1;
-        this.path = path;
+        this.filename = filename;
         this.content = content;
     }
 
@@ -24,9 +24,9 @@ public class Blob implements Serializable {
         this.SHA1 = Utils.sha1();
     }
 
-    public String getPath() { return path; }
+    public String getFilename() { return filename; }
 
-    public void setPath() { this.path = path; }
+    public void setPath() { this.filename = filename; }
 
     public Object getContent() {
         return content;
