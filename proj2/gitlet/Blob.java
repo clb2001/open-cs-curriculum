@@ -7,9 +7,9 @@ import java.io.Serializable;
 public class Blob implements Serializable {
     private String SHA1;
     private String filename;
-    private Object content;
+    private byte[] content;
 
-    public Blob(String SHA1, String filename, Object content) {
+    public Blob(String SHA1, String filename, byte[] content) {
         this.SHA1 = SHA1;
         this.filename = filename;
         this.content = content;
@@ -28,11 +28,11 @@ public class Blob implements Serializable {
 
     public void setPath() { this.filename = filename; }
 
-    public Object getContent() {
+    public byte[] getContent() {
         return content;
     }
 
-    public void setContent(Object content) {
+    public void setContent(byte[] content) {
         this.content = content;
     }
 }

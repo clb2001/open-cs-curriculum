@@ -54,9 +54,8 @@ public class Repository {
     private static Commit get_current_commit() {
         String activating_commit_sha1 = Utils.readContentsAsString(
                 Utils.join(HEADS_DIR, activating_branch));
-        Commit current_commit = Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, activating_commit_sha1),
+        return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, activating_commit_sha1),
                 Commit.class);
-        return current_commit;
     }
 
     private static Blob get_blob_from_area(TreeMap<String, Blob> area, String path) {
@@ -127,30 +126,33 @@ public class Repository {
     }
 
     private static Commit get_commit_from_objects(String commit_id) {
-        try {
-            List<String> dirs = Utils.plainFilenamesIn(COMMIT_OBJECTS_DIR);
-            if (dirs != null && !dirs.contains(commit_id)) {
-                throw new GitletException("No commit with that id exists.");
-            }
-            return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, commit_id), Commit.class);
-        } catch (GitletException ignored) {
-            System.err.println(ignored.getMessage());
-            return null;
-        } // 这么写有什么问题？
+        List<String> dirs = Utils.plainFilenamesIn(COMMIT_OBJECTS_DIR);
+        if (dirs != null && !dirs.contains(commit_id)) {
+            throw new GitletException("No commit with that id exists.");
+        }
+        return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, commit_id), Commit.class);
     }
 
+    // 任务是用target_commit取代current_commit
     private static void process_commit(Commit current_commit, Commit target_commit) {
-        // untracked如何实现？需要注意到，当前commit所包含的blob必须是准备切换的blob的超集
         TreeMap<String, String> current_paths = current_commit.getPaths();
         TreeMap<String, String> target_paths = target_commit.getPaths();
-        // 第32个测试有问题
+
+        // 对于文件A，分三种情况讨论：
+        // 第一种情况，被target_commit跟踪，不被current_commit跟踪，这种情况直接写入
+        // （写入的时候记得检查文件夹中是否有重名文件，有的话要抛出异常--这也就很好地处理了untracked file的问题）
+        // 第二种情况，被current_commit跟踪，不被target_commit跟踪，这种情况直接删除
+        // 第三种情况，被current_commit和target_commit跟踪，这种情况要比较对应的blob，以target中的为准(可以与第一种情况合并)
+        // 我之前的版本就非常混乱
+
         if (target_paths != null) {
             for (Map.Entry<String, String> entry: target_paths.entrySet()) {
-                // return
-                if (untracked_area.containsKey(entry.getValue())) {
-                    System.err.println("There is an untracked file in the way; " +
+                if (target_paths.containsKey(entry.getKey()) &&
+                        getFile(entry.getKey()) != null &&
+                        !Arrays.equals(target_commit.getBlobs().get(entry.getValue()).getContent(),
+                                readContents(getFile(entry.getKey())))) {
+                    throw new GitletException("There is an untracked file in the way; " +
                             "delete it, or add and commit it first.");
-                    System.exit(1);
                 }
                 Object o = target_commit.getBlobs().get(entry.getValue()).getContent();
                 Utils.writeContents(Utils.join(CWD, entry.getKey()), o);
@@ -207,6 +209,17 @@ public class Repository {
         Utils.writeContents(HEAD, activating_branch);
     }
 
+    private static void print_log(Commit commit) {
+        System.out.println("===");
+        System.out.println("commit " + commit.getSHA1());
+        System.out.println("Date: " + commit.getTimestamp());
+        System.out.println(commit.getMessage() + "\n");
+        // 处理合并情况
+//            if () {
+//                System.out.println("Merged " + "into ");
+//            }
+    }
+
     // 定义几条规则：
     // 1、commit的索引全部都要在初始化结束之后，以初始化的对象为标准进行定义
     // 2、blob的索引要根据文件名和文件内容一起定义
@@ -225,9 +238,9 @@ public class Repository {
             // 一个API没看到浪费了好长时间, 一个逻辑运算符弄错浪费了好长时间
             String initial_sha1 = Utils.sha1(Utils.serialize(init_commit));
             init_commit.setSHA1(initial_sha1);
-            Utils.writeContents(HEAD, activating_branch);
             Utils.writeObject(Utils.join(COMMIT_OBJECTS_DIR, initial_sha1), init_commit);
             Utils.writeContents(Utils.join(HEADS_DIR, activating_branch), initial_sha1);
+            renew_area();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
@@ -323,19 +336,9 @@ public class Repository {
         }
     }
 
-    private static void print_log(Commit commit) {
-        System.out.println("===");
-        System.out.println("commit " + commit.getSHA1());
-        System.out.println("Date: " + commit.getTimestamp());
-        System.out.println(commit.getMessage() + "\n");
-        // 处理合并情况
-//            if () {
-//                System.out.println("Merged " + "into ");
-//            }
-    }
-
     // 这个是打印当前分支的日志消息
     public static void log() {
+        awake_area();
         Commit commit = get_current_commit();
         while (commit != null) {
             print_log(commit);
@@ -345,6 +348,7 @@ public class Repository {
 
     // 这个是打印所有分支的日志消息，从commit_objects中找到所有的commit
     public static void global_log() {
+        awake_area();
         List<String> files = Utils.plainFilenamesIn(COMMIT_OBJECTS_DIR);
         if (files != null) {
             for (String file: files) {
@@ -355,9 +359,10 @@ public class Repository {
     }
 
     public static void find(String message) {
-        LinkedList<String> messages = new LinkedList<>();
-        List<String> files = Utils.plainFilenamesIn(COMMIT_OBJECTS_DIR);
         try {
+            awake_area();
+            LinkedList<String> messages = new LinkedList<>();
+            List<String> files = Utils.plainFilenamesIn(COMMIT_OBJECTS_DIR);
             if (files != null) {
                 for (String file: files) {
                     Commit commit = Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, file), Commit.class);
@@ -439,6 +444,7 @@ public class Repository {
     // 将文件切换回上次commit时的版本
     public static void checkout_file(String filename) {
         try {
+            awake_area();
             Commit commit = get_current_commit();
             Blob blob = get_blob_from_area(commit.getBlobs(), filename);
             if (blob == null) {
@@ -453,17 +459,21 @@ public class Repository {
     // 将文件切换回指定commit id时的版本
     public static void checkout_commit(String commit_id, String filename) {
         try {
+            awake_area();
             Commit commit = get_commit_from_objects(commit_id);
             Blob blob = get_blob_from_area(commit.getBlobs(), filename);
             if (blob == null) {
                 throw new GitletException("File does not exist in that commit.");
             }
             Utils.writeContents(Objects.requireNonNull(getFile(filename)), blob.getContent());
-        } catch (GitletException ignored) {}
+        } catch (GitletException ignored) {
+            System.err.println(ignored.getMessage());
+        }
     }
 
     public static void branch(String branch_name) {
         try {
+            awake_area();
             List<String> files = Utils.plainFilenamesIn(HEADS_DIR);
             if (files == null || files.contains(branch_name)) {
                 throw new GitletException("A branch with that name already exists.");
@@ -509,5 +519,6 @@ public class Repository {
     //  应该算最复杂的一个函数了
     public static void merge(String branch_name) {
         // 多叉树的最近公共祖先
+
     }
 }
