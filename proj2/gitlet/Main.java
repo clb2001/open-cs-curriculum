@@ -96,7 +96,6 @@ public class Main {
                     Repository.reset(commit_id);
                     break;
                 case "merge":
-                    // TODO: handle the 'merge' command:
                     validateNumArgs("merge", args, 2);
                     branch_name = args[1];
                     Repository.merge(branch_name);

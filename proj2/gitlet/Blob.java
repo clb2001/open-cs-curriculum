@@ -20,8 +20,8 @@ public class Blob implements Serializable {
     }
 
     // blob的哈希值由文件名和文件内容决定
-    public void setSHA1() {
-        this.SHA1 = Utils.sha1();
+    public void setSHA1(String SHA1) {
+        this.SHA1 = SHA1;
     }
 
     public String getFilename() { return filename; }

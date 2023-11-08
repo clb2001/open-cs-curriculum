@@ -20,31 +20,46 @@ public class Commit implements Serializable {
     /* 将其联想为一个树状结构 */
     private Commit parent;
     /** The message of this Commit. */
+    private Commit mergeCommit;
     private String message;
     private String SHA1;
     private String timestamp;
     private TreeMap<String, Blob> blobs; // String表示文件的哈希值
 
-    /* TODO: fill in the rest of this class. */
-    public Commit(Commit parent, TreeMap<String, Blob> blobs, String message, String timestamp, String SHA1) {
+    public Commit(Commit parent, Commit mergeCommit, TreeMap<String, Blob> blobs, String message, String timestamp, String SHA1) {
         this.parent = parent;
+        this.mergeCommit = mergeCommit;
         this.blobs = blobs;
         this.message = message;
         this.timestamp = timestamp;
         this.SHA1 = SHA1;
     }
 
-    public Commit(Commit commit) {
+    public Commit(Commit commit, boolean flag) {
         this.parent = commit;
+        this.mergeCommit = commit.mergeCommit;
         this.blobs = commit.blobs;
         this.message = null;
         this.timestamp = null;
         this.SHA1 = null;
     }
 
+    public Commit(Commit commit) {
+        this.parent = commit.parent;
+        this.mergeCommit = commit.mergeCommit;
+        this.blobs = commit.blobs;
+        this.message = commit.message;
+        this.timestamp = commit.timestamp;
+        this.SHA1 = commit.SHA1;
+    }
+
     public Commit getParent() { return parent; }
 
     public void setParent(Commit parent) { this.parent = parent; }
+
+    public Commit getMergeCommit() { return mergeCommit; }
+
+    public void setMergeCommit(Commit mergeCommit) { this.mergeCommit = mergeCommit; }
 
     public String getSHA1() {
         return SHA1;
