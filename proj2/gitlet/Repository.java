@@ -137,25 +137,44 @@ public class Repository {
     private static void process_commit(Commit current_commit, Commit target_commit) {
         TreeMap<String, String> current_paths = current_commit.getPaths();
         TreeMap<String, String> target_paths = target_commit.getPaths();
-
+        List<String> dirs = Utils.plainFilenamesIn(CWD);
+        if (dirs != null) {
+            for (String filename: dirs) {
+                if ((current_paths == null || !current_paths.containsKey(filename)) &&
+                    target_paths.containsKey(filename)) {
+                    throw new GitletException("There is an untracked file in the way; " +
+                            "delete it, or add and commit it first.");
+                }
+            }
+        }
         // 对于文件A，分三种情况讨论：
         // 第一种情况，被target_commit跟踪，不被current_commit跟踪，这种情况直接写入
-        // （写入的时候记得检查文件夹中是否有重名文件，有的话要抛出异常--这也就很好地处理了untracked file的问题）
+        // （写入之前记得检查文件夹中是否有untracked的文件，有的话要抛出异常--这也就很好地处理了untracked file的问题）
+        // （current_commit中有内容相同的文件（即使文件名不同），则不需要抛出异常）
         // 第二种情况，被current_commit跟踪，不被target_commit跟踪，这种情况直接删除
         // 第三种情况，被current_commit和target_commit跟踪，这种情况要比较对应的blob，以target中的为准(可以与第一种情况合并)
         // 我之前的版本就非常混乱
 
         if (target_paths != null) {
             for (Map.Entry<String, String> entry: target_paths.entrySet()) {
-                if (target_paths.containsKey(entry.getKey()) &&
-                        getFile(entry.getKey()) != null &&
-                        !Arrays.equals(target_commit.getBlobs().get(entry.getValue()).getContent(),
-                                readContents(getFile(entry.getKey())))) {
-                    throw new GitletException("There is an untracked file in the way; " +
-                            "delete it, or add and commit it first.");
+//                if (target_paths.containsKey(entry.getKey()) &&
+//                        getFile(entry.getKey()) != null &&
+//                        !Arrays.equals(target_commit.getBlobs().get(entry.getValue()).getContent(),
+//                                readContents(getFile(entry.getKey())))) {
+//                    throw new GitletException("There is an untracked file in the way; " +
+//                            "delete it, or add and commit it first.");
+//                }
+                Blob blob = target_commit.getBlobs().get(entry.getValue());
+                byte[] blob_content = blob.getContent();
+                if (current_paths != null) {
+                    for (Map.Entry<String, String> curr_entry: current_paths.entrySet()) {
+                        byte[] curr_blob_content = current_commit.getBlobs().get(curr_entry.getValue()).getContent();
+                        if (Arrays.equals(blob_content, curr_blob_content)) {
+                            Utils.writeContents(Utils.join(CWD, entry.getKey()), (Object) blob_content);
+                        }
+                    }
                 }
-                Object o = target_commit.getBlobs().get(entry.getValue()).getContent();
-                Utils.writeContents(Utils.join(CWD, entry.getKey()), o);
+                Utils.writeContents(Utils.join(CWD, entry.getKey()), (Object) blob_content);
             }
         }
         if (current_paths != null) {
