@@ -40,24 +40,24 @@ public class Repository {
     private static final File HEADS_DIR = new File(REFS_DIR, "heads");
 
     /* some important variables */
-    private static String activating_branch = "master";
+    private static String activatingBranch = "master";
     private static Commit mergeCommit = null;
 
     /* these areas are stored in /index */
-    private static TreeMap<String, Blob> addition_area;
-    private static TreeMap<String, Blob> removal_area;
-    private static TreeMap<String, byte[]> untracked_area;
+    private static TreeMap<String, Blob> additionArea;
+    private static TreeMap<String, Blob> removalArea;
+    private static TreeMap<String, byte[]> untrackedArea;
 
     // 获取当前head对应的commit
-    private static Commit get_current_commit() {
-        String activating_commit_sha1 = Utils.readContentsAsString(
-                Utils.join(HEADS_DIR, activating_branch));
-        return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, activating_commit_sha1),
+    private static Commit getCurrentCommit() {
+        String activatingCommitSha1 = Utils.readContentsAsString(
+                Utils.join(HEADS_DIR, activatingBranch));
+        return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, activatingCommitSha1),
                 Commit.class);
     }
 
     // 从area中获取给定文件名对应的blob，没有返回null
-    private static Blob get_blob_from_area(TreeMap<String, Blob> area, String path) {
+    private static Blob getBlobFromArea(TreeMap<String, Blob> area, String path) {
         if (area != null) {
             for (Map.Entry<String, Blob> entry: area.entrySet()) {
                 if (Objects.equals(entry.getValue().getFilename(), path)) {
@@ -69,11 +69,11 @@ public class Repository {
     }
 
     // 根据哈希值从commit中获取blob对象
-    private static Blob get_blob_from_commit(Commit commit, String SHA1) {
+    private static Blob getBlobFromCommit(Commit commit, String sha1) {
         TreeMap<String, Blob> blobs = commit.getBlobs();
         if (blobs != null) {
             for (Map.Entry<String, Blob> entry: blobs.entrySet()) {
-                if (entry.getValue().getSHA1().equals(SHA1)) {
+                if (entry.getValue().getSha1().equals(sha1)) {
                     return entry.getValue();
                 }
             }
@@ -82,19 +82,19 @@ public class Repository {
     }
 
     // 从bolbs中获取 <路径->哈希值 键值对>
-    public static TreeMap<String, String> get_paths(TreeMap<String, Blob> blobs) {
+    public static TreeMap<String, String> getPaths(TreeMap<String, Blob> blobs) {
         if (blobs != null) {
-            TreeMap<String, String> path_map= new TreeMap<>();
+            TreeMap<String, String> pathMap = new TreeMap<>();
             for (Map.Entry<String, Blob> entry: blobs.entrySet()) {
-                path_map.put(entry.getValue().getFilename(), entry.getKey());
+                pathMap.put(entry.getValue().getFilename(), entry.getKey());
             }
-            return path_map;
+            return pathMap;
         }
         return null;
     }
 
     // 获取当前时间（这里的时间格式有问题--但是改个语言差点把内核玩崩了）
-    private static String get_time() {
+    private static String getTime() {
         Date currentTime = new Date();
         SimpleDateFormat dateFormat = new SimpleDateFormat(
                 "E MMM d HH:mm:ss yyyy Z", java.util.Locale.ENGLISH);
@@ -103,8 +103,8 @@ public class Repository {
     }
 
     // 从commit中获取给定文件的内容
-    private static byte[] get_content_from_commit(Commit commit, String filename) {
-        TreeMap<String, String> dirs = get_paths(commit.getBlobs());
+    private static byte[] getContentFromCommit(Commit commit, String filename) {
+        TreeMap<String, String> dirs = getPaths(commit.getBlobs());
         if (dirs != null && dirs.containsKey(filename)) {
             return commit.getBlobs().get(dirs.get(filename)).getContent();
         }
@@ -112,22 +112,22 @@ public class Repository {
     }
 
     // 从文件名commit_id的文件中读取Commit对象
-    private static Commit get_commit_from_objects(String commit_id) {
+    private static Commit getCommitFromObjects(String commitId) {
         List<String> dirs = Utils.plainFilenamesIn(COMMIT_OBJECTS_DIR);
-        if (commit_id.length() == 8) {
+        if (commitId.length() == 8) {
             if (dirs != null) {
                 for (String dir: dirs) {
-                    if (dir.substring(0, 8).equals(commit_id)) {
+                    if (dir.substring(0, 8).equals(commitId)) {
                         return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, dir), Commit.class);
                     }
                 }
             }
             throw new GitletException("No commit with that id exists.");
         } else {
-            if (dirs != null && !dirs.contains(commit_id)) {
+            if (dirs != null && !dirs.contains(commitId)) {
                 throw new GitletException("No commit with that id exists.");
             }
-            return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, commit_id), Commit.class);
+            return Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, commitId), Commit.class);
         }
     }
 
@@ -136,66 +136,66 @@ public class Repository {
     // 然后根据获得的结果建树，建树应该在原来树结构的基础上建，而不应该另起炉灶
     // 但是后来把Tree这一个中间架构删掉之后，发现没有这么复杂
     // 更新现有的commit，这里的浅拷贝坑惨我
-    private static Commit refreshed_commit(Commit commit) {
-        Commit new_commit = deepCopy(commit);
-        if (new_commit != null) {
-            new_commit.setParent(commit);
+    private static Commit refreshedCommit(Commit commit) {
+        Commit newCommit = deepCopy(commit);
+        if (newCommit != null) {
+            newCommit.setParent(commit);
         }
-        TreeMap<String, String> path_SHA1 = get_paths(new_commit.getBlobs());
-        if (path_SHA1 == null) {
-            new_commit.setBlobs(new TreeMap<>());
+        TreeMap<String, String> pathSha1 = getPaths(newCommit.getBlobs());
+        if (pathSha1 == null) {
+            newCommit.setBlobs(new TreeMap<>());
         }
         // 增加内容，从addition_area中查找
-        if (addition_area != null) {
-            for (Map.Entry<String, Blob> entry: addition_area.entrySet()) {
-                if (path_SHA1 != null) {
+        if (additionArea != null) {
+            for (Map.Entry<String, Blob> entry: additionArea.entrySet()) {
+                if (pathSha1 != null) {
                     String path = entry.getValue().getFilename();
-                    if (path_SHA1.containsKey(path)) {
-                        new_commit.getBlobs().remove(path_SHA1.get(path));
+                    if (pathSha1.containsKey(path)) {
+                        newCommit.getBlobs().remove(pathSha1.get(path));
                     }
                 }
-                new_commit.getBlobs().put(entry.getKey(), entry.getValue());
+                newCommit.getBlobs().put(entry.getKey(), entry.getValue());
                 Utils.writeObject(Utils.join(BLOB_OBJECTS_DIR, entry.getKey()), entry.getValue());
             }
         }
         // 删除内容，从removal_area中查找
-        if (removal_area != null) {
-            for (Map.Entry<String, Blob> entry: removal_area.entrySet()) {
-                if (path_SHA1 != null) {
-                    String sha1 = path_SHA1.get(entry.getValue().getFilename());
+        if (removalArea != null) {
+            for (Map.Entry<String, Blob> entry: removalArea.entrySet()) {
+                if (pathSha1 != null) {
+                    String sha1 = pathSha1.get(entry.getValue().getFilename());
                     if (sha1 != null) {
-                        new_commit.getBlobs().remove(sha1);
+                        newCommit.getBlobs().remove(sha1);
                     }
                 }
             }
         }
-        return new_commit;
+        return newCommit;
     }
 
-    private static void get_split_commit_helper(
+    private static void getSplitCommitHelper(
             Commit commit, HashMap<String, Integer> commit_depth, int depth) {
         if (commit != null) {
-            commit_depth.put(commit.getSHA1(), depth);
+            commit_depth.put(commit.getSha1(), depth);
             if (commit.getParent() != null) {
-                get_split_commit_helper(commit.getParent(), commit_depth, depth + 1);
+                getSplitCommitHelper(commit.getParent(), commit_depth, depth + 1);
             }
             if (commit.getMergeCommit() != null) {
-                get_split_commit_helper(commit.getMergeCommit(), commit_depth, depth + 1);
+                getSplitCommitHelper(commit.getMergeCommit(), commit_depth, depth + 1);
             }
         }
     }
 
     // 获得两个commit的最近公共节点，注意，不能按链表处理
-    private static Commit get_split_commit(Commit current_commit, Commit branch_commit) {
-        HashMap<String, Integer> current_commit_depth = new HashMap<>();
-        HashMap<String, Integer> branch_commit_depth = new HashMap<>();
-        get_split_commit_helper(current_commit, current_commit_depth, 0);
-        get_split_commit_helper(branch_commit, branch_commit_depth, 0);
+    private static Commit getSplitCommit(Commit current_commit, Commit branch_commit) {
+        HashMap<String, Integer> currentCommitDepth = new HashMap<>();
+        HashMap<String, Integer> branchCommitDepth = new HashMap<>();
+        getSplitCommitHelper(current_commit, currentCommitDepth, 0);
+        getSplitCommitHelper(branch_commit, branchCommitDepth, 0);
         TreeMap<Integer, Commit> res = new TreeMap<>();
-        for (Map.Entry<String, Integer> entry: current_commit_depth.entrySet()) {
-            if (branch_commit_depth.containsKey(entry.getKey())) {
-                res.put(entry.getValue() + branch_commit_depth.get(entry.getKey()),
-                        get_commit_from_objects(entry.getKey()));
+        for (Map.Entry<String, Integer> entry: currentCommitDepth.entrySet()) {
+            if (branchCommitDepth.containsKey(entry.getKey())) {
+                res.put(entry.getValue() + branchCommitDepth.get(entry.getKey()),
+                        getCommitFromObjects(entry.getKey()));
             }
         }
         return res.get(res.firstKey());
@@ -210,116 +210,116 @@ public class Repository {
     // 第三种情况，被current_commit跟踪，不被target_commit跟踪，这种情况直接删除
     // 我之前的版本就非常混乱
     // 现在的版本虽然能通过测试，但是其中的逻辑还是有点混乱
-    private static void process_commit(Commit current_commit, Commit target_commit) {
-        TreeMap<String, String> current_paths = get_paths(current_commit.getBlobs());
-        TreeMap<String, String> target_paths = get_paths(target_commit.getBlobs());
-        if (untracked_area != null) {
-            for (Map.Entry<String, byte[]> entry: untracked_area.entrySet()) {
-                if (target_paths.containsKey(entry.getKey())){
-                    throw new GitletException("There is an untracked file in the way; " +
-                            "delete it, or add and commit it first.");
+    private static void processCommit(Commit currentCommit, Commit targetCommit) {
+        TreeMap<String, String> currentPaths = getPaths(currentCommit.getBlobs());
+        TreeMap<String, String> targetPaths = getPaths(targetCommit.getBlobs());
+        if (untrackedArea != null) {
+            for (Map.Entry<String, byte[]> entry: untrackedArea.entrySet()) {
+                if (targetPaths.containsKey(entry.getKey())) {
+                    throw new GitletException("There is an untracked file in the way; "
+                            + "delete it, or add and commit it first.");
                 }
             }
         }
-        if (target_paths != null) {
-            for (Map.Entry<String, String> entry: target_paths.entrySet()) {
-                byte[] blob_content = target_commit.getBlobs().get(entry.getValue()).getContent();
-                Utils.writeContents(Utils.join(CWD, entry.getKey()), (Object) blob_content);
+        if (targetPaths != null) {
+            for (Map.Entry<String, String> entry: targetPaths.entrySet()) {
+                byte[] blobContent = targetCommit.getBlobs().get(entry.getValue()).getContent();
+                Utils.writeContents(Utils.join(CWD, entry.getKey()), (Object) blobContent);
             }
         }
-        if (current_paths != null) {
-            for (Map.Entry<String, String> entry: current_paths.entrySet()) {
-                String current_path = entry.getKey();
-                if (target_paths == null || !target_paths.containsKey(current_path)) {
-                    Utils.restrictedDelete(current_path);
+        if (currentPaths != null) {
+            for (Map.Entry<String, String> entry: currentPaths.entrySet()) {
+                String currentPath = entry.getKey();
+                if (targetPaths == null || !targetPaths.containsKey(currentPath)) {
+                    Utils.restrictedDelete(currentPath);
                 }
             }
         }
-        addition_area = null;
-        removal_area = null;
+        additionArea = null;
+        removalArea = null;
     }
 
-    private static void awake_area() {
+    private static void awakeArea() {
         if (!ADD_INDEX.exists()) {
-            addition_area = new TreeMap<>();
+            additionArea = new TreeMap<>();
         } else {
-            addition_area = Utils.readObject(ADD_INDEX, TreeMap.class);
-            if (addition_area == null) {
-                addition_area = new TreeMap<>();
+            additionArea = Utils.readObject(ADD_INDEX, TreeMap.class);
+            if (additionArea == null) {
+                additionArea = new TreeMap<>();
             }
         }
         if (!REMOVE_INDEX.exists()) {
-            removal_area = new TreeMap<>();
+            removalArea = new TreeMap<>();
         } else {
-            removal_area = Utils.readObject(REMOVE_INDEX, TreeMap.class);
-            if (removal_area == null) {
-                removal_area = new TreeMap<>();
+            removalArea = Utils.readObject(REMOVE_INDEX, TreeMap.class);
+            if (removalArea == null) {
+                removalArea = new TreeMap<>();
             }
         }
         if (!HEAD.exists()) {
-            activating_branch = "master";
+            activatingBranch = "master";
         } else {
-            activating_branch = Utils.readContentsAsString(HEAD);
+            activatingBranch = Utils.readContentsAsString(HEAD);
         }
-        checkUntracked_area();
+        checkUntrackedArea();
     }
 
-    private static void renew_area() {
-        Utils.writeObject(ADD_INDEX, addition_area);
-        Utils.writeObject(REMOVE_INDEX, removal_area);
-        Utils.writeContents(HEAD, activating_branch);
-        checkUntracked_area();
-        Utils.writeObject(UNTRACKED_INDEX, untracked_area);
+    private static void renewArea() {
+        Utils.writeObject(ADD_INDEX, additionArea);
+        Utils.writeObject(REMOVE_INDEX, removalArea);
+        Utils.writeContents(HEAD, activatingBranch);
+        checkUntrackedArea();
+        Utils.writeObject(UNTRACKED_INDEX, untrackedArea);
     }
 
     // 只要文件夹中的文件既不是在addition_area和removal_area中，又不在commit中被跟踪，那么它就是untracked的
-    private static void checkUntracked_area() {
-        untracked_area = new TreeMap<>();
+    private static void checkUntrackedArea() {
+        untrackedArea = new TreeMap<>();
         List<String> dirs = Utils.plainFilenamesIn(CWD);
-        TreeMap<String, String> current_paths = get_paths(get_current_commit().getBlobs());
-        TreeMap<String, String> addition_paths = get_paths(addition_area);
+        TreeMap<String, String> currentPaths = getPaths(getCurrentCommit().getBlobs());
+        TreeMap<String, String> additionPaths = getPaths(additionArea);
         if (dirs != null) {
             for (String filename: dirs) {
-                if ((current_paths == null || !current_paths.containsKey(filename)) &&
-                        (addition_paths == null || !addition_paths.containsKey(filename))){
-                    untracked_area.put(filename, Utils.readContents(new File(filename)));
+                if ((currentPaths == null || !currentPaths.containsKey(filename))
+                        && (additionPaths == null || !additionPaths.containsKey(filename))) {
+                    untrackedArea.put(filename, Utils.readContents(new File(filename)));
                 }
             }
         }
     }
 
-    private static void print_log(Commit commit) {
+    private static void printLog(Commit commit) {
         System.out.println("===");
-        System.out.println("commit " + commit.getSHA1());
+        System.out.println("commit " + commit.getSha1());
         if (commit.getMergeCommit() != null) {
-            System.out.println("Merge: " + commit.getSHA1().substring(0, 7) +
-                    " " + commit.getMergeCommit().getSHA1().substring(0, 7));
+            System.out.println("Merge: " + commit.getSha1().substring(0, 7)
+                    + " " + commit.getMergeCommit().getSha1().substring(0, 7));
         }
         System.out.println("Date: " + commit.getTimestamp());
         System.out.println(commit.getMessage() + "\n");
     }
 
-    private static void branch_check_exist(String branch_name) {
+    private static void branchCheckExist(String branchName) {
         List<String> files = Utils.plainFilenamesIn(HEADS_DIR);
-        if (files != null && files.contains(branch_name)) {
+        if (files != null && files.contains(branchName)) {
             throw new GitletException("A branch with that name already exists.");
         }
     }
 
-    private static void branch_check_not_exist(String branch_name) {
+    private static void branchCheckNotExist(String branchName) {
         List<String> files = Utils.plainFilenamesIn(HEADS_DIR);
-        if (files == null || !files.contains(branch_name)) {
+        if (files == null || !files.contains(branchName)) {
             throw new GitletException("A branch with that name does not exist.");
         }
     }
 
-    private static boolean modified_in_commit(Commit split_commit, Commit commit,
-                                              boolean split_has_file, boolean commit_has_file, String filename) {
-        if (split_has_file && !commit_has_file) {
+    private static boolean modifiedInCommit(Commit splitCommit, Commit commit,
+            boolean splitHasFile, boolean commitHasFile, String filename) {
+        if (splitHasFile && !commitHasFile) {
             return true;
         }
-        return !Arrays.equals(get_content_from_commit(split_commit, filename),
-                get_content_from_commit(commit, filename));
+        return !Arrays.equals(getContentFromCommit(splitCommit, filename),
+                getContentFromCommit(commit, filename));
     }
 
     // 定义几条规则：
@@ -333,16 +333,16 @@ public class Repository {
             if (GITLET_DIR.exists()) {
                 throw new GitletException("A Gitlet version-control system already exists in the current directory.");
             }
-            boolean mkdir_DIR = GITLET_DIR.mkdirs() && REFS_DIR.mkdir() && HEADS_DIR.mkdir()
+            boolean mkdirDIR = GITLET_DIR.mkdirs() && REFS_DIR.mkdir() && HEADS_DIR.mkdir()
                     && OBJECTS_DIR.mkdir() && BLOB_OBJECTS_DIR.mkdir() && COMMIT_OBJECTS_DIR.mkdir();
-            Commit init_commit = new Commit(null, null, null, "initial commit",
+            Commit initCommit = new Commit(null, null, null, "initial commit",
                     "Wed Dec 31 16:00:00 1969 -0800", null);
             // 一个API没看到浪费了好长时间, 一个逻辑运算符弄错浪费了好长时间
-            String initial_sha1 = Utils.sha1(Utils.serialize(init_commit));
-            init_commit.setSHA1(initial_sha1);
-            Utils.writeObject(Utils.join(COMMIT_OBJECTS_DIR, initial_sha1), init_commit);
-            Utils.writeContents(Utils.join(HEADS_DIR, activating_branch), initial_sha1);
-            renew_area();
+            String initialSha1 = Utils.sha1(Utils.serialize(initCommit));
+            initCommit.setSha1(initialSha1);
+            Utils.writeObject(Utils.join(COMMIT_OBJECTS_DIR, initialSha1), initCommit);
+            Utils.writeContents(Utils.join(HEADS_DIR, activatingBranch), initialSha1);
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
@@ -350,32 +350,32 @@ public class Repository {
 
     public static void add(String filename) {
         try {
-            awake_area();
+            awakeArea();
             File file = Utils.getFile(filename);
             if (file == null) {
                 throw new GitletException("File does not exist.");
             }
-            boolean need_remove = false;
+            boolean needRemove = false;
             // 先删除removal_area中的相关记录
-            for (Map.Entry<String, Blob> entry: removal_area.entrySet()) {
+            for (Map.Entry<String, Blob> entry: removalArea.entrySet()) {
                 if (Objects.equals(entry.getValue().getFilename(), filename)) {
-                    removal_area.remove(entry.getKey());
-                    need_remove = true;
+                    removalArea.remove(entry.getKey());
+                    needRemove = true;
                 }
             }
-            String res_sha1 = Utils.sha1(filename, Utils.readContents(file));
-            Commit activating_commit = get_current_commit();
-            Blob blob = get_blob_from_commit(activating_commit, res_sha1);
-            if (!need_remove) {
-                if (blob == null || !blob.getSHA1().equals(res_sha1)) {
+            String resSha1 = Utils.sha1(filename, Utils.readContents(file));
+            Commit activatingCommit = getCurrentCommit();
+            Blob blob = getBlobFromCommit(activatingCommit, resSha1);
+            if (!needRemove) {
+                if (blob == null || !blob.getSha1().equals(resSha1)) {
                     // 如果不相等，就把内容写入addition_area中
-                    addition_area.put(res_sha1, new Blob(res_sha1, filename, Utils.readContents(file)));
+                    additionArea.put(resSha1, new Blob(resSha1, filename, Utils.readContents(file)));
                 } else {
                     // 如果相等，且暂存区存在相关快照，则删除相关记录
-                    addition_area.remove(res_sha1);
+                    additionArea.remove(resSha1);
                 }
             }
-            renew_area();
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
@@ -386,24 +386,24 @@ public class Repository {
     // 还需要一路修改增加或者删除元素的父文件夹对应的哈希值
     public static void commit(String message) {
         try {
-            awake_area();
-            if (addition_area.isEmpty() && removal_area.isEmpty()) {
+            awakeArea();
+            if (additionArea.isEmpty() && removalArea.isEmpty()) {
                 throw new GitletException("No changes added to the commit.");
             }
             if (message == null || message.isEmpty()) {
                 throw new GitletException("Please enter a commit message.");
             }
-            Commit new_commit = refreshed_commit(get_current_commit());
-            new_commit.setMergeCommit(mergeCommit);
-            new_commit.setMessage(message);
-            new_commit.setTimestamp(get_time());
-            String new_sha1 = Utils.sha1(Utils.serialize(new_commit));
-            new_commit.setSHA1(new_sha1);
-            Utils.writeContents(Utils.join(HEADS_DIR, activating_branch), new_sha1);
-            Utils.writeObject(Utils.join(COMMIT_OBJECTS_DIR, new_sha1), new_commit);
-            addition_area = null;
-            removal_area = null;
-            renew_area();
+            Commit newCommit = refreshedCommit(getCurrentCommit());
+            newCommit.setMergeCommit(mergeCommit);
+            newCommit.setMessage(message);
+            newCommit.setTimestamp(getTime());
+            String newSha1 = Utils.sha1(Utils.serialize(newCommit));
+            newCommit.setSha1(newSha1);
+            Utils.writeContents(Utils.join(HEADS_DIR, activatingBranch), newSha1);
+            Utils.writeObject(Utils.join(COMMIT_OBJECTS_DIR, newSha1), newCommit);
+            additionArea = null;
+            removalArea = null;
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
@@ -411,28 +411,28 @@ public class Repository {
 
     public static void rm(String filename) {
         try {
-            awake_area();
+            awakeArea();
             // 需要根据文件名返回Blob
-            Blob addition_blob = get_blob_from_area(addition_area, filename);
-            if (addition_blob != null) {
-                addition_area.remove(addition_blob.getSHA1());
-                renew_area();
+            Blob additionBlob = getBlobFromArea(additionArea, filename);
+            if (additionBlob != null) {
+                additionArea.remove(additionBlob.getSha1());
+                renewArea();
                 return;
             }
-            Commit activating_commit = get_current_commit();
-            TreeMap<String, String> path_map = get_paths(activating_commit.getBlobs());
-            String SHA1 = null;
-            if (path_map != null) {
-                SHA1 = path_map.get(filename);
+            Commit activatingCommit = getCurrentCommit();
+            TreeMap<String, String> pathMap = getPaths(activatingCommit.getBlobs());
+            String sha1 = null;
+            if (pathMap != null) {
+                sha1 = pathMap.get(filename);
             }
-            if (SHA1 != null) {
-                removal_area.put(SHA1, activating_commit.getBlobs().get(SHA1));
+            if (sha1 != null) {
+                removalArea.put(sha1, activatingCommit.getBlobs().get(sha1));
                 Utils.restrictedDelete(filename);
             }
-            if ((addition_blob == null) && SHA1 == null) {
+            if ((additionBlob == null) && sha1 == null) {
                 throw new GitletException("No reason to remove the file.");
             }
-            renew_area();
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
@@ -440,31 +440,31 @@ public class Repository {
 
     // 这个是打印当前分支的日志消息
     public static void log() {
-        awake_area();
-        Commit commit = get_current_commit();
+        awakeArea();
+        Commit commit = getCurrentCommit();
         while (commit != null) {
-            print_log(commit);
+            printLog(commit);
             commit = commit.getParent();
         }
-        renew_area();
+        renewArea();
     }
 
     // 这个是打印所有分支的日志消息，从commit_objects中找到所有的commit
-    public static void global_log() {
-        awake_area();
+    public static void globalLog() {
+        awakeArea();
         List<String> files = Utils.plainFilenamesIn(COMMIT_OBJECTS_DIR);
         if (files != null) {
             for (String file: files) {
                 Commit commit = Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, file), Commit.class);
-                print_log(commit);
+                printLog(commit);
             }
         }
-        renew_area();
+        renewArea();
     }
 
     public static void find(String message) {
         try {
-            awake_area();
+            awakeArea();
             LinkedList<String> messages = new LinkedList<>();
             List<String> files = Utils.plainFilenamesIn(COMMIT_OBJECTS_DIR);
             if (files != null) {
@@ -472,7 +472,7 @@ public class Repository {
                     Commit commit = Utils.readObject(Utils.join(COMMIT_OBJECTS_DIR, file), Commit.class);
                     String s = commit.getMessage();
                     if (Objects.equals(s, message)) {
-                        messages.add(commit.getSHA1());
+                        messages.add(commit.getSha1());
                     }
                 }
             }
@@ -482,183 +482,183 @@ public class Repository {
             for (String s: messages) {
                 System.out.println(s);
             }
-            renew_area();
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
     }
 
     public static void status() {
-        awake_area();
+        awakeArea();
         System.out.println("=== Branches ===");
-        System.out.println("*" + activating_branch);
+        System.out.println("*" + activatingBranch);
         List<String> filenames = Utils.plainFilenamesIn(HEADS_DIR);
         if (filenames != null) {
             Collections.sort(filenames);
             for (String filename: filenames) {
-                if (!Objects.equals(filename, activating_branch)) {
+                if (!Objects.equals(filename, activatingBranch)) {
                     System.out.println(filename);
                 }
             }
         }
         System.out.println("\n=== Staged Files ===");
-        if (!addition_area.isEmpty()) {
-            for (Map.Entry<String, Blob> entry: addition_area.entrySet()) {
+        if (!additionArea.isEmpty()) {
+            for (Map.Entry<String, Blob> entry: additionArea.entrySet()) {
                 System.out.println(entry.getValue().getFilename()); // TreeMap会自动将顺序排好
             }
         }
         System.out.println("\n=== Removed Files ===");
-        if (!removal_area.isEmpty()) {
-            for (Map.Entry<String, Blob> entry: removal_area.entrySet()) {
+        if (!removalArea.isEmpty()) {
+            for (Map.Entry<String, Blob> entry: removalArea.entrySet()) {
                 System.out.println(entry.getValue().getFilename());
             }
         }
         System.out.println("\n=== Modifications Not Staged For Commit ===");
         System.out.println("\n=== Untracked Files ===");
-        if (!untracked_area.isEmpty()) {
-            for (Map.Entry<String, byte[]> entry: untracked_area.entrySet()) {
+        if (!untrackedArea.isEmpty()) {
+            for (Map.Entry<String, byte[]> entry: untrackedArea.entrySet()) {
                 System.out.println(entry.getKey());
             }
         }
-        renew_area();
+        renewArea();
     }
 
     //  切换到指定分支(为什么这个功能实现得这么复杂？)
-    public static void checkout_branch(String branch_name) {
+    public static void checkoutBranch(String branchName) {
         try {
-            awake_area();
-            if (Objects.equals(branch_name, activating_branch)) {
+            awakeArea();
+            if (Objects.equals(branchName, activatingBranch)) {
                 throw new GitletException("No need to checkout the current branch.");
             }
             List<String> dirs = Utils.plainFilenamesIn(HEADS_DIR);
-            if (dirs != null && !dirs.contains(branch_name)) {
+            if (dirs != null && !dirs.contains(branchName)) {
                 throw new GitletException("No such branch exists.");
             }
-            Commit current_commit = get_current_commit();
-            String target_commit_sha1 = Utils.readContentsAsString(Utils.join(HEADS_DIR, branch_name));
-            Commit target_commit = get_commit_from_objects(target_commit_sha1);
-            process_commit(current_commit, target_commit);
-            activating_branch = branch_name;
-            renew_area();
+            Commit currentCommit = getCurrentCommit();
+            String targetCommitSha1 = Utils.readContentsAsString(Utils.join(HEADS_DIR, branchName));
+            Commit targetCommit = getCommitFromObjects(targetCommitSha1);
+            processCommit(currentCommit, targetCommit);
+            activatingBranch = branchName;
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
     }
 
     // 将文件切换回上次commit时的版本
-    public static void checkout_file(String filename) {
+    public static void checkoutFile(String filename) {
         try {
-            awake_area();
-            Commit commit = get_current_commit();
-            Blob blob = get_blob_from_area(commit.getBlobs(), filename);
+            awakeArea();
+            Commit commit = getCurrentCommit();
+            Blob blob = getBlobFromArea(commit.getBlobs(), filename);
             if (blob == null) {
                 throw new GitletException("File does not exist in that commit.");
             }
             Utils.writeContents(Objects.requireNonNull(getFile(filename)), blob.getContent());
-            renew_area();
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
     }
 
     // 将文件切换回指定commit id时的版本
-    public static void checkout_commit(String commit_id, String filename) {
+    public static void checkoutCommit(String commitId, String filename) {
         try {
-            awake_area();
-            Commit commit = get_commit_from_objects(commit_id);
-            Blob blob = get_blob_from_area(commit.getBlobs(), filename);
+            awakeArea();
+            Commit commit = getCommitFromObjects(commitId);
+            Blob blob = getBlobFromArea(commit.getBlobs(), filename);
             if (blob == null) {
                 throw new GitletException("File does not exist in that commit.");
             }
             Utils.writeContents(Objects.requireNonNull(getFile(filename)), blob.getContent());
-            renew_area();
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
     }
 
-    public static void branch(String branch_name) {
+    public static void branch(String branchName) {
         try {
-            awake_area();
-            branch_check_exist(branch_name);
-            Commit commit = get_current_commit();
-            Utils.writeContents(Utils.join(HEADS_DIR, branch_name), commit.getSHA1());
-            renew_area();
+            awakeArea();
+            branchCheckExist(branchName);
+            Commit commit = getCurrentCommit();
+            Utils.writeContents(Utils.join(HEADS_DIR, branchName), commit.getSha1());
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
     }
 
-    public static void rm_branch(String branch_name) {
+    public static void rmBranch(String branchName) {
         try {
-            awake_area();
-            if (Objects.equals(activating_branch, branch_name)) {
+            awakeArea();
+            if (Objects.equals(activatingBranch, branchName)) {
                 throw new GitletException("Cannot remove the current branch.");
             }
-            branch_check_not_exist(branch_name);
-            Utils.join(HEADS_DIR, branch_name).delete();
-            renew_area();
+            branchCheckNotExist(branchName);
+            Utils.join(HEADS_DIR, branchName).delete();
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
     }
 
     // 这个reset需要注意一下，不是很好写（其实跟checkout_branch差不多）
-    public static void reset(String commit_id) {
+    public static void reset(String commitId) {
         try {
-            awake_area();
-            Commit current_commit = get_current_commit();
-            Commit target_commit = get_commit_from_objects(commit_id);
-            process_commit(current_commit, target_commit);
-            Utils.writeContents(Utils.join(HEADS_DIR, activating_branch), commit_id);
-            renew_area();
+            awakeArea();
+            Commit currentCommit = getCurrentCommit();
+            Commit targetCommit = getCommitFromObjects(commitId);
+            processCommit(currentCommit, targetCommit);
+            Utils.writeContents(Utils.join(HEADS_DIR, activatingBranch), commitId);
+            renewArea();
         } catch (GitletException ignored) {
             System.err.println(ignored.getMessage());
         }
     }
 
     // Merges files from the given branch into the current branch.
-    public static void merge(String branch_name) {
+    public static void merge(String branchName) {
         try {
-            awake_area();
-            if (!untracked_area.isEmpty()) {
-                throw new GitletException("There is an untracked file in the way; " +
-                        "delete it, or add and commit it first.");
+            awakeArea();
+            if (!untrackedArea.isEmpty()) {
+                throw new GitletException("There is an untracked file in the way; "
+                        + "delete it, or add and commit it first.");
             }
-            if (!addition_area.isEmpty() || !removal_area.isEmpty()) {
+            if (!additionArea.isEmpty() || !removalArea.isEmpty()) {
                 throw new GitletException("You have uncommitted changes.");
             }
-            if (Objects.equals(branch_name, activating_branch)) {
+            if (Objects.equals(branchName, activatingBranch)) {
                 throw new GitletException("Cannot merge a branch with itself.");
             }
-            branch_check_not_exist(branch_name);
-            String branch_sha1 = readContentsAsString(join(HEADS_DIR, branch_name));
-            Commit branch_commit = get_commit_from_objects(branch_sha1);
-            Commit current_commit = get_current_commit();
-            String current_sha1 = current_commit.getSHA1();
+            branchCheckNotExist(branchName);
+            String branch_sha1 = readContentsAsString(join(HEADS_DIR, branchName));
+            Commit branch_commit = getCommitFromObjects(branch_sha1);
+            Commit current_commit = getCurrentCommit();
+            String current_sha1 = current_commit.getSha1();
             while (current_commit != null) {
-                String commit_sha1 = current_commit.getSHA1();
+                String commit_sha1 = current_commit.getSha1();
                 if (Objects.equals(commit_sha1, branch_sha1)) {
                     throw new GitletException("Given branch is an ancestor of the current branch.");
                 }
                 current_commit = current_commit.getParent();
             }
             while (branch_commit != null) {
-                String branch_commit_sha1 = branch_commit.getSHA1();
+                String branch_commit_sha1 = branch_commit.getSha1();
                 if (Objects.equals(current_sha1, branch_commit_sha1)) {
                     System.out.println("Current branch fast-forwarded.");
-                    checkout_branch(branch_name);
-                    renew_area();
+                    checkoutBranch(branchName);
+                    renewArea();
                     return;
                 }
                 branch_commit = branch_commit.getParent();
             }
-            current_commit = get_current_commit();
-            branch_commit = get_commit_from_objects(branch_sha1);
-            Commit split_commit = get_split_commit(current_commit, branch_commit);
-            TreeMap<String, String> current_dirs = get_paths(current_commit.getBlobs());
-            TreeMap<String, String> branch_dirs = get_paths(branch_commit.getBlobs());
-            TreeMap<String, String> split_dirs = get_paths(split_commit.getBlobs());
+            current_commit = getCurrentCommit();
+            branch_commit = getCommitFromObjects(branch_sha1);
+            Commit split_commit = getSplitCommit(current_commit, branch_commit);
+            TreeMap<String, String> current_dirs = getPaths(current_commit.getBlobs());
+            TreeMap<String, String> branch_dirs = getPaths(branch_commit.getBlobs());
+            TreeMap<String, String> split_dirs = getPaths(split_commit.getBlobs());
             // 首先定义一个set，获取三个commit中所有用到文件的并集
             Set<String> files_set = new TreeSet<>();
             if (current_dirs != null) {
@@ -691,9 +691,9 @@ public class Repository {
                 if (current_dirs != null) {
                     current_has_file = current_dirs.containsKey(filename);
                 }
-                boolean modified_in_branch = modified_in_commit(split_commit, branch_commit,
+                boolean modified_in_branch = modifiedInCommit(split_commit, branch_commit,
                         split_has_file, branch_has_file, filename);
-                boolean modified_in_current = modified_in_commit(split_commit, current_commit,
+                boolean modified_in_current = modifiedInCommit(split_commit, current_commit,
                         split_has_file, current_has_file, filename);
                 // case 6: unmodified in HEAD but not present in branch --> REMOVE
                 if (!modified_in_current && !branch_has_file) {
@@ -704,7 +704,7 @@ public class Repository {
                 else if (!modified_in_branch && !current_has_file) {}
                 // case 1: modified in branch but not HEAD --> branch
                 else if (split_has_file && modified_in_branch && !modified_in_current) {
-                    Object o = (Object) get_content_from_commit(branch_commit, filename);
+                    Object o = (Object) getContentFromCommit(branch_commit, filename);
                     if (o != null) {
                         Utils.writeContents(Utils.join(CWD, filename), o);
                         add(filename);
@@ -712,7 +712,7 @@ public class Repository {
                 }
                 // case 2: modified in HEAD but not branch --> HEAD
                 else if (split_has_file && !modified_in_branch && modified_in_current) {
-                    Object o = (Object) get_content_from_commit(current_commit, filename);
+                    Object o = (Object) getContentFromCommit(current_commit, filename);
                     if (o != null) {
                         Utils.writeContents(Utils.join(CWD, filename), o);
                         add(filename);
@@ -722,8 +722,8 @@ public class Repository {
                 //         1. in the same way --> does not matter
                 //         2. in different ways --> CONFLICT
                 else if (modified_in_branch && modified_in_current) {
-                    byte[] branch_content = get_content_from_commit(branch_commit, filename);
-                    byte[] current_content = get_content_from_commit(current_commit, filename);
+                    byte[] branch_content = getContentFromCommit(branch_commit, filename);
+                    byte[] current_content = getContentFromCommit(current_commit, filename);
                     if (!Arrays.equals(branch_content, current_content)) {
                         has_exception = true;
                         String info;
@@ -746,22 +746,22 @@ public class Repository {
                 // case 4: not in split nor branch but in HEAD --> HEAD
                 else if (!split_has_file && !branch_has_file && current_has_file) {
                     Utils.writeContents(Utils.join(CWD, filename),
-                            (Object) get_content_from_commit(current_commit, filename));
+                            (Object) getContentFromCommit(current_commit, filename));
                     add(filename);
                 }
                 // case 5: not in split nor HEAD but in branch --> branch
                 else if (!split_has_file && !current_has_file && branch_has_file) {
                     Utils.writeContents(Utils.join(CWD, filename),
-                            (Object) get_content_from_commit(branch_commit, filename));
+                            (Object) getContentFromCommit(branch_commit, filename));
                     add(filename);
                 }
             }
-            String commit_message = "Merged " + branch_name + " into " + activating_branch + ".";
+            String commit_message = "Merged " + branchName + " into " + activatingBranch + ".";
             mergeCommit = branch_commit;
-            if (!addition_area.isEmpty() || !removal_area.isEmpty()) {
+            if (!additionArea.isEmpty() || !removalArea.isEmpty()) {
                 commit(commit_message);
             }
-            renew_area();
+            renewArea();
             if (has_exception) {
                 throw new GitletException("Encountered a merge conflict.");
             }

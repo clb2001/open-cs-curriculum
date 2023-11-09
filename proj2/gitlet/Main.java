@@ -1,6 +1,5 @@
 package gitlet;
 
-import java.io.File;
 import java.util.Objects;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
@@ -52,7 +51,7 @@ public class Main {
                     break;
                 case "global-log":
                     validateNumArgs("global-log", args, 1);
-                    Repository.global_log();
+                    Repository.globalLog();
                     break;
                 case "find":
                     validateNumArgs("find", args, 2);
@@ -65,17 +64,17 @@ public class Main {
                     break;
                 case "checkout":
                     if (args.length == 2) {
-                        Repository.checkout_branch(args[1]);
+                        Repository.checkoutBranch(args[1]);
                     } else if (args.length == 3) {
                         if (!Objects.equals(args[1], "--")) {
                             throw new GitletException("Incorrect operands.");
                         }
-                        Repository.checkout_file(args[2]);
+                        Repository.checkoutFile(args[2]);
                     } else if (args.length == 4) {
                         if (!Objects.equals(args[2], "--")) {
                             throw new GitletException("Incorrect operands.");
                         }
-                        Repository.checkout_commit(args[1], args[3]);
+                        Repository.checkoutCommit(args[1], args[3]);
                     } else {
                         throw new RuntimeException("Invalid number of arguments for: checkout");
                     }
@@ -88,7 +87,7 @@ public class Main {
                 case "rm-branch":
                     validateNumArgs("rm-branch", args, 2);
                     branch_name = args[1];
-                    Repository.rm_branch(branch_name);
+                    Repository.rmBranch(branch_name);
                     break;
                 case "reset":
                     validateNumArgs("reset", args, 2);

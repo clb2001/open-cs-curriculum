@@ -22,17 +22,18 @@ public class Commit implements Serializable {
     /** The message of this Commit. */
     private Commit mergeCommit;
     private String message;
-    private String SHA1;
+    private String sha1;
     private String timestamp;
     private TreeMap<String, Blob> blobs; // String表示文件的哈希值
 
-    public Commit(Commit parent, Commit mergeCommit, TreeMap<String, Blob> blobs, String message, String timestamp, String SHA1) {
+    public Commit(Commit parent, Commit mergeCommit, TreeMap<String, Blob> blobs,
+                  String message, String timestamp, String sha1) {
         this.parent = parent;
         this.mergeCommit = mergeCommit;
         this.blobs = blobs;
         this.message = message;
         this.timestamp = timestamp;
-        this.SHA1 = SHA1;
+        this.sha1 = sha1;
     }
 
     public Commit(Commit commit, TreeMap<String, Blob> newBlobs) {
@@ -41,7 +42,7 @@ public class Commit implements Serializable {
         this.blobs = newBlobs;
         this.message = commit.message;
         this.timestamp = commit.timestamp;
-        this.SHA1 = commit.SHA1;
+        this.sha1 = commit.sha1;
     }
 
     public Commit(Commit commit) {
@@ -50,24 +51,32 @@ public class Commit implements Serializable {
         this.blobs = commit.blobs;
         this.message = commit.message;
         this.timestamp = commit.timestamp;
-        this.SHA1 = commit.SHA1;
+        this.sha1 = commit.sha1;
     }
 
-    public Commit getParent() { return parent; }
-
-    public void setParent(Commit parent) { this.parent = parent; }
-
-    public Commit getMergeCommit() { return mergeCommit; }
-
-    public void setMergeCommit(Commit mergeCommit) { this.mergeCommit = mergeCommit; }
-
-    public String getSHA1() {
-        return SHA1;
+    public Commit getParent() {
+        return parent;
     }
 
-    public void setSHA1(String SHA1) {
+    public void setParent(Commit parent) {
+        this.parent = parent;
+    }
+
+    public Commit getMergeCommit() {
+        return mergeCommit;
+    }
+
+    public void setMergeCommit(Commit mergeCommit) {
+        this.mergeCommit = mergeCommit;
+    }
+
+    public String getSha1() {
+        return sha1;
+    }
+
+    public void setSha1(String sha1) {
         // 草，我怎么会用Utils.sha1()这么愚蠢的方法？是说为什么每次返回的sha1都不一样
-        this.SHA1 = SHA1;
+        this.sha1 = sha1;
     }
 
     public String getMessage() {
@@ -78,11 +87,19 @@ public class Commit implements Serializable {
         this.message = message;
     }
 
-    public String getTimestamp() { return timestamp; }
+    public String getTimestamp() {
+        return timestamp;
+    }
 
-    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
 
-    public TreeMap<String, Blob> getBlobs() { return blobs; }
+    public TreeMap<String, Blob> getBlobs() {
+        return blobs;
+    }
 
-    public void setBlobs(TreeMap<String, Blob> blobs) { this.blobs = blobs; }
+    public void setBlobs(TreeMap<String, Blob> blobs) {
+        this.blobs = blobs;
+    }
 }
