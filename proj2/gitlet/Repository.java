@@ -635,7 +635,6 @@ public class Repository {
             TreeMap<String, String> current_dirs = get_paths(current_commit.getBlobs());
             TreeMap<String, String> branch_dirs = get_paths(branch_commit.getBlobs());
             TreeMap<String, String> split_dirs = get_paths(split_commit.getBlobs());
-            checkout_commit();
             // 首先定义一个set，获取三个commit中所有用到文件的并集
             Set<String> files_set = new TreeSet<>();
             if (current_dirs != null) {
