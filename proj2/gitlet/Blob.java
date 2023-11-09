@@ -1,6 +1,7 @@
 package gitlet;
 
-import java.io.Serializable;
+//import java.io.Serializable;
+import java.io.*;
 
 // 写代码这回事吧，还是要在有个大致框架之后，赶紧写起来
 // 跟做科研一样，有想法了就做，不要怕做不好，不会做，先做再说

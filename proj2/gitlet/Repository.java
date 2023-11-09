@@ -107,7 +107,11 @@ public class Repository {
 
     private static Commit refreshed_commit() {
         // 这里的浅拷贝坑惨我
-        Commit new_commit = new Commit(get_current_commit(), true);
+        Commit current_commit = get_current_commit();
+        Commit new_commit = deepCopy(current_commit);
+        if (new_commit != null) {
+            new_commit.setParent(current_commit);
+        }
         TreeMap<String, String> path_SHA1 = get_paths(new_commit.getBlobs());
         if (path_SHA1 == null) {
             new_commit.setBlobs(new TreeMap<>());
@@ -133,9 +137,11 @@ public class Repository {
         // 删除内容，从removal_area中查找
         if (removal_area != null) {
             for (Map.Entry<String, Blob> entry: removal_area.entrySet()) {
-                String sha1 = path_SHA1.get(entry.getValue().getFilename());
-                if (sha1 != null) {
-                    new_commit.getBlobs().remove(sha1);
+                if (path_SHA1 != null) {
+                    String sha1 = path_SHA1.get(entry.getValue().getFilename());
+                    if (sha1 != null) {
+                        new_commit.getBlobs().remove(sha1);
+                    }
                 }
             }
         }
@@ -281,9 +287,6 @@ public class Repository {
 
     private static boolean modified_in_commit(Commit split_commit, Commit commit,
                                               boolean split_has_file, boolean commit_has_file, String filename) {
-        if (split_has_file && !commit_has_file) {
-            return true;
-        }
         return !Arrays.equals(get_content_from_commit(split_commit, filename),
                 get_content_from_commit(commit, filename));
     }
@@ -643,13 +646,15 @@ public class Repository {
                 boolean modified_in_current = modified_in_commit(split_commit, current_commit,
                         split_has_file, current_has_file, filename);
                 // case 1: modified in branch but not HEAD --> branch
-                if (split_has_file && modified_in_branch && !modified_in_current) {
+                if (split_has_file && branch_has_file && current_has_file &&
+                        modified_in_branch && !modified_in_current) {
                     Utils.writeContents(Utils.join(CWD, filename),
                             (Object) get_content_from_commit(branch_commit, filename));
                     add(filename);
                 }
                 // case 2: modified in HEAD but not branch --> HEAD
-                else if (split_has_file && !modified_in_branch && modified_in_current) {
+                else if (split_has_file && branch_has_file && current_has_file &&
+                        !modified_in_branch && modified_in_current) {
                     Utils.writeContents(Utils.join(CWD, filename),
                             (Object) get_content_from_commit(current_commit, filename));
                     add(filename);
@@ -657,12 +662,17 @@ public class Repository {
                 // case 3: modified in branch and HEAD
                 //         1. in the same way --> does not matter
                 //         2. in different ways --> CONFLICT
-                else if (modified_in_branch && modified_in_current) {
+                else if (branch_has_file && current_has_file &&
+                        modified_in_branch && modified_in_current) {
                     byte[] branch_content = get_content_from_commit(branch_commit, filename);
                     byte[] current_content = get_content_from_commit(current_commit, filename);
                     if (!Arrays.equals(branch_content, current_content)) {
                         throw new GitletException("Encountered a merge conflict.");
                     }
+                }
+                else if ((branch_has_file && modified_in_branch && !current_has_file) ||
+                        (current_has_file && modified_in_current && !branch_has_file)) {
+                    throw new GitletException("Encountered a merge conflict.");
                 }
                 // case 4: not in split nor branch but in HEAD --> HEAD
                 else if (!split_has_file && !branch_has_file && current_has_file) {
@@ -682,8 +692,7 @@ public class Repository {
                     rm(filename);
                 }
                 // case 7: unmodified in branch but not present in HEAD --> REMAIN REMOVED
-                else if (!modified_in_branch && !current_has_file) {
-                }
+                else if (!modified_in_branch && !current_has_file) {}
             }
             String commit_message = "Merged " + branch_name + " into " + activating_branch + ".";
             current_commit.setMergeCommit(branch_commit);

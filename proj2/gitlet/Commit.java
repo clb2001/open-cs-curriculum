@@ -1,6 +1,6 @@
 package gitlet;
 
-import java.io.Serializable;
+import java.io.*;
 import java.util.*;
 
 /** Represents a gitlet commit object.
@@ -35,13 +35,13 @@ public class Commit implements Serializable {
         this.SHA1 = SHA1;
     }
 
-    public Commit(Commit commit, boolean flag) {
+    public Commit(Commit commit, TreeMap<String, Blob> newBlobs) {
         this.parent = commit;
         this.mergeCommit = commit.mergeCommit;
-        this.blobs = commit.blobs;
-        this.message = null;
-        this.timestamp = null;
-        this.SHA1 = null;
+        this.blobs = newBlobs;
+        this.message = commit.message;
+        this.timestamp = commit.timestamp;
+        this.SHA1 = commit.SHA1;
     }
 
     public Commit(Commit commit) {

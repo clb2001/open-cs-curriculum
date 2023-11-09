@@ -1,14 +1,6 @@
 package gitlet;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
@@ -250,5 +242,23 @@ class Utils {
             }
         }
         return null;
+    }
+
+    public static <T> T deepCopy(T original) {
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(original);
+            oos.close();
+            ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+            ObjectInputStream ois = new ObjectInputStream(bis);
+            @SuppressWarnings("unchecked")
+            T copy = (T) ois.readObject();
+            ois.close();
+            return copy;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
