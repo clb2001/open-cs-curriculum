@@ -198,14 +198,6 @@ public class Repository {
         if (target_paths != null) {
             for (Map.Entry<String, String> entry: target_paths.entrySet()) {
                 byte[] blob_content = target_commit.getBlobs().get(entry.getValue()).getContent();
-//                if (current_paths != null) {
-//                    for (Map.Entry<String, String> curr_entry: current_paths.entrySet()) {
-//                        byte[] curr_blob_content = current_commit.getBlobs().get(curr_entry.getValue()).getContent();
-//                        if (Arrays.equals(blob_content, curr_blob_content)) {
-//                            Utils.writeContents(Utils.join(CWD, entry.getKey()), (Object) blob_content);
-//                        }
-//                    }
-//                }
                 Utils.writeContents(Utils.join(CWD, entry.getKey()), (Object) blob_content);
             }
         }
@@ -569,7 +561,10 @@ public class Repository {
             if (Objects.equals(activating_branch, branch_name)) {
                 throw new GitletException("Cannot remove the current branch.");
             }
-            branch_check(branch_name);
+            List<String> files = Utils.plainFilenamesIn(HEADS_DIR);
+            if (files == null || !files.contains(branch_name)) {
+                throw new GitletException("A branch with that name does not exist.");
+            }
             Utils.join(HEADS_DIR, branch_name).delete();
             renew_area();
         } catch (GitletException ignored) {
