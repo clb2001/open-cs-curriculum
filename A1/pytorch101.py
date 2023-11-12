@@ -24,7 +24,7 @@ def create_sample_tensor():
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  x = torch.tensor([[0, 10], [100, 0], [0, 0]])
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -58,7 +58,8 @@ def mutate_tensor(x, indices, values):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  for i, indice in enumerate(indices):
+    x[indice[0], indice[1]] = values[i]
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -87,7 +88,10 @@ def count_tensor_elements(x):
   #   You CANNOT use the built-in functions torch.numel(x) or x.numel().      #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  shape = x.shape
+  num_elements = 1
+  for s in shape:
+    num_elements *= s
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -109,7 +113,7 @@ def create_tensor_of_pi(M, N):
   #       TODO: Implement this function. It should take one line.             #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  x = torch.full((M, N), 3.14)
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -134,7 +138,7 @@ def multiples_of_ten(start, stop):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  x = torch.arange((start + 9) // 10 * 10, (stop + 9) // 10 * 10, 10, dtype=torch.float64)
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -172,7 +176,10 @@ def slice_indexing_practice(x):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  last_row = x[-1, :]
+  third_col = x[:, 2:3]
+  first_two_rows_three_cols = x[:2, :3]
+  even_rows_odd_cols = x[::2, 1::2]
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -212,7 +219,11 @@ def slice_assignment_practice(x):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  x[:2, 1] = 1
+  x[:2, 2:6] = 2
+  x[2:4, :3:2] = 3
+  x[2:4, 1:4:2] = 4
+  x[2:4, 4:6] = 5
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -239,7 +250,7 @@ def shuffle_cols(x):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  y = x[:, [0, 0, 2, 1]]
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -265,7 +276,9 @@ def reverse_rows(x):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  idx0 = torch.arange(x.shape[0]).tolist()
+  idx0.reverse()
+  y = x[idx0]
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -292,8 +305,10 @@ def take_one_elem_per_col(x):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
-  #############################################################################
+  idx0 = [1, 0, 3]
+  idx1 = [0, 1, 2]
+  y = x[idx0, idx1]
+  ################1#############################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
   return y
@@ -318,7 +333,7 @@ def count_negative_entries(x):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  num_neg = x[x < 0].shape[0]
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -343,7 +358,9 @@ def make_one_hot(x):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  y = torch.zeros((len(x), 1 + max(x)), dtype=torch.float32)
+  for i, t in enumerate(x):
+    y[i, t] = 1
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -376,7 +393,8 @@ def reshape_practice(x):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  y = x.view(2, 3, 4)
+  y = torch.cat((y[0], y[1]), dim=1)
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -414,7 +432,11 @@ def zero_row_min(x):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  # y = torch.clone(x[torch.argmin(x, dim=1), x.shape])
+  t = torch.argmin(x, dim=1)
+  k = torch.arange(x.shape[0])
+  y = torch.clone(x)
+  y[k, t] = 0
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
