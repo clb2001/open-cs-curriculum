@@ -469,7 +469,12 @@ def batched_matrix_multiply(x, y, use_loop=True):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  if not use_loop:
+    z = torch.bmm(x, y)
+  else:
+    z = torch.zeros((x.shape[0], x.shape[1], y.shape[2]))
+    for i in range(x.shape[0]):
+      z[i] = torch.mm(x[i], y[i])
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -504,7 +509,9 @@ def normalize_columns(x):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  x_mean = x.mean(dim=0)
+  sigma = (((x - x_mean) * (x - x_mean)).sum(dim=0) /  (x_mean.shape[0] - 1)).sqrt()
+  y = (x - x_mean) / sigma
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
@@ -549,7 +556,9 @@ def mm_on_gpu(x, w):
   #                    TODO: Implement this function                          #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  x = x.cuda()
+  w = w.cuda()
+  y = x.mm(w).to('cpu')
   #############################################################################
   #                            END OF YOUR CODE                               #
   #############################################################################
