@@ -39,7 +39,8 @@ class Linear(object):
     # will need to reshape the input into rows.                                 #
     #############################################################################
     # Replace "pass" statement with your code
-    pass
+    tmp = x.view(x.shape[0], -1)
+    out = torch.matmul(tmp, w) + b
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -67,7 +68,9 @@ class Linear(object):
     # TODO: Implement the linear backward pass.                                 #
     #############################################################################
     # Replace "pass" statement with your code
-    pass
+    dx = torch.matmul(dout, w.t()).view(x.shape)
+    dw = torch.matmul(x.view(x.shape[0], -1).t(), dout).view(w.shape)
+    db = torch.sum(dout, dim=0).view(b.shape)
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -92,7 +95,7 @@ class ReLU(object):
     # You should not change the input tensor with an in-place operation.        #
     #############################################################################
     # Replace "pass" statement with your code
-    pass
+    out = torch.maximum(x, torch.zeros_like(x))
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
