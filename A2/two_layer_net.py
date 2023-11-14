@@ -116,7 +116,9 @@ def nn_forward_pass(params, X):
     # shape (N, C).                                                            #
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    temp = torch.matmul(X, W1) + b1 # (N, H)
+    hidden = torch.maximum(temp, torch.zeros_like(temp))
+    scores = torch.matmul(hidden, W2) + b2 # (N, C)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -176,7 +178,8 @@ def nn_forward_backward(params, X, y=None, reg=0.0):
     # (Check Numeric Stability in http://cs231n.github.io/linear-classify/).   #
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    from linear_classifier import softmax_loss_vectorized
+    loss, grads = softmax_loss_vectorized(W2, h1, y, reg)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -190,7 +193,28 @@ def nn_forward_backward(params, X, y=None, reg=0.0):
     # tensor of same size                                                     #
     ###########################################################################
     # Replace "pass" statement with your code
-    pass
+    # 参考了chatgpt的实现
+    # 感觉这里写的softmax反向传播算法不难，也很好地体现了反向传播的思路，但是书上的推导很复杂
+    scores -= scores.max(dim=1, keepdim=True)[0]  # for numerical stability
+    scores_exp = torch.exp(scores)
+    softmax = scores_exp / scores_exp.sum(dim=1, keepdim=True)
+
+    loss = -torch.log(softmax[range(N), y]).sum() / N
+    loss += reg * (torch.sum(params['W1']**2) + torch.sum(params['W2']**2))
+
+    # Compute the gradients
+    dsoftmax = softmax.clone()
+    dsoftmax[range(N), y] -= 1
+    dsoftmax /= N
+
+    grads['W2'] = torch.mm(h1.t(), dsoftmax) + 2 * reg * params['W2']
+    grads['b2'] = dsoftmax.sum(dim=0)
+
+    dh = torch.mm(dsoftmax, params['W2'].t())
+    dh[h1 <= 0] = 0  # backprop ReLU non-linearity
+
+    grads['W1'] = torch.mm(X.t(), dh) + 2 * reg * params['W1']
+    grads['b1'] = dh.sum(dim=0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -260,7 +284,10 @@ def nn_train(params, loss_func, pred_func, X, y, X_val, y_val,
     # stored in the grads dictionary defined above.                         #
     #########################################################################
     # Replace "pass" statement with your code
-    pass
+    params['W1'] -= grads['W1'] * learning_rate
+    params['W2'] -= grads['W2'] * learning_rate
+    params['b1'] -= grads['b1'] * learning_rate
+    params['b2'] -= grads['b2'] * learning_rate
     #########################################################################
     #                             END OF YOUR CODE                          #
     #########################################################################
@@ -285,6 +312,8 @@ def nn_train(params, loss_func, pred_func, X, y, X_val, y_val,
     'loss_history': loss_history,
     'train_acc_history': train_acc_history,
     'val_acc_history': val_acc_history,
+    'learning_rate': learning_rate, # 自己加的，方便测试
+    'reg': reg
   }
 
 
@@ -316,7 +345,7 @@ def nn_predict(params, loss_func, X):
   # TODO: Implement this function; it should be VERY simple!                #
   ###########################################################################
   # Replace "pass" statement with your code
-  pass
+  y_pred = torch.argmax(loss_func(params, X), dim=1)
   ###########################################################################
   #                              END OF YOUR CODE                           #
   ###########################################################################
@@ -351,7 +380,14 @@ def nn_get_search_params():
   # classifier.                                                             #
   ###########################################################################
   # Replace "pass" statement with your code
-  pass
+  import numpy as np
+  # learning_rates = np.linspace(0.822, 0.823, num=10)
+  learning_rates = [0.8225]
+  # hidden_sizes = np.linspace(64, 256, num=16, dtype=int)
+  hidden_sizes = [256]
+  # regularization_strengths = np.linspace(7.94e-4, 7.95e-4, num=10)
+  regularization_strengths = [0.0007945]
+  learning_rate_decays = [1]
   ###########################################################################
   #                           END OF YOUR CODE                              #
   ###########################################################################
@@ -405,7 +441,25 @@ def find_best_net(data_dict, get_param_set_fn):
   # automatically like we did on the previous exercises.                      #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  learning_rates = get_param_set_fn()[0]
+  hidden_sizes = get_param_set_fn()[1]
+  regularization_strengths = get_param_set_fn()[2]
+  learning_rate_decays = get_param_set_fn()[3]
+  for learning_rate in learning_rates:
+    for hidden_size in hidden_sizes:
+      for regularization_strength in regularization_strengths:
+        for learning_rate_decay in learning_rate_decays:
+          net = TwoLayerNet(3 * 32 * 32, hidden_size, 10, dtype=data_dict['X_train'].dtype, device=data_dict['X_train'].device)
+          stats = net.train(data_dict['X_train'], data_dict['y_train'],
+                            data_dict['X_val'], data_dict['y_val'],
+                            num_iters=500, batch_size=1000,
+                            learning_rate=learning_rate, 
+                            learning_rate_decay=learning_rate_decay,
+                            reg=regularization_strength, verbose=True)
+          y_val_pred = net.predict(data_dict['X_val'])
+          val_acc = 100.0 * (y_val_pred == data_dict['y_val']).double().mean().item() 
+          if val_acc > best_val_acc:
+            best_val_acc, best_net, best_stat = val_acc, net, stats
   #############################################################################
   #                               END OF YOUR CODE                            #
   #############################################################################
