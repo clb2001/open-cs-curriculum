@@ -118,11 +118,31 @@ class ReLU(object):
     # You should not change the input tensor with an in-place operation.        #
     #############################################################################
     # Replace "pass" statement with your code
-    pass
+    dx = torch.mul(dout, (x > 0).double())
+    # dx = dout * (x > 0).double()
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
     return dx
+  
+
+# add softmax unit，但是没什么用
+class Softmax(object):
+  
+  @staticmethod
+  def forward(x):
+    exp_x = torch.exp(x - torch.max(x))
+    out = exp_x / torch.sum(exp_x, dim=1, keepdim=True) 
+    cache = x
+    return out, cache
+  
+  @staticmethod
+  def backward(softmax_probs, cache):
+    N, D = softmax_probs.shape
+    dout = softmax_probs.clone()
+    dout[range(N), cache] -= 1
+    dout /= N    
+    return dout
 
 
 class Linear_ReLU(object):
@@ -153,6 +173,23 @@ class Linear_ReLU(object):
     da = ReLU.backward(dout, relu_cache)
     dx, dw, db = Linear.backward(da, fc_cache)
     return dx, dw, db
+  
+
+class Linear_Softmax(object):
+  
+  # cache是一个不断解包的过程
+  @staticmethod
+  def forward(x, w, b):
+    a, fc_cache = Linear.forward(x, w, b)
+    out, relu_cache = Softmax.forward(a)
+    cache = (fc_cache, relu_cache)
+    return out, cache
+  
+  @staticmethod
+  def backward(softmax_probs, cache, y):
+    dout = Softmax.backward(softmax_probs, y)
+    dx, dw, db = Linear.backward(dout, cache)
+    return dx, dw, db        
 
 
 class TwoLayerNet(object):
@@ -198,7 +235,16 @@ class TwoLayerNet(object):
     # weights and biases using the keys 'W2' and 'b2'.                        #
     ###########################################################################
     # Replace "pass" statement with your code
-    pass
+    self.input_dim = input_dim
+    self.hidden_dim = hidden_dim
+    self.num_classes = num_classes
+    self.weight_scale = weight_scale
+    self.dtype = dtype
+    self.device = device
+    self.params['W1'] = torch.normal(0.0, weight_scale, (input_dim, hidden_dim), dtype=self.dtype, device=self.device)
+    self.params['W2'] = torch.normal(0.0, weight_scale, (hidden_dim, num_classes), dtype=self.dtype, device=self.device)
+    self.params['b1'] = torch.zeros((hidden_dim), dtype=self.dtype, device=self.device)
+    self.params['b2'] = torch.zeros((num_classes), dtype=self.dtype, device=self.device)
     ###########################################################################
     #                            END OF YOUR CODE                             #
     ###########################################################################
@@ -246,7 +292,8 @@ class TwoLayerNet(object):
     # class scores for X and storing them in the scores variable.             #
     ###########################################################################
     # Replace "pass" statement with your code
-    pass
+    out, cache_1 = Linear_ReLU.forward(X, self.params['W1'], self.params['b1']) 
+    scores, cache_2 = Linear.forward(out, self.params['W2'], self.params['b2'])
     ###########################################################################
     #                            END OF YOUR CODE                             #
     ###########################################################################
@@ -267,7 +314,15 @@ class TwoLayerNet(object):
     # a factor of 0.5.                                                        #
     ###########################################################################
     # Replace "pass" statement with your code
-    pass
+    softmax_probs, _ = Linear_Softmax.forward(out, self.params['W2'], self.params['b2'])
+    dx1, grads['W2'], grads['b2'] = Linear_Softmax.backward(softmax_probs, cache_2, y)    
+    dx2, grads['W1'], grads['b1'] = Linear_ReLU.backward(dx1, cache_1)
+    grads['W1'] += 2 * self.reg * self.params['W1']
+    grads['W2'] += 2 * self.reg * self.params['W2']
+
+    correct_class_probs = softmax_probs[torch.arange(X.shape[0]), y]
+    loss = -torch.log(correct_class_probs).mean()
+    loss += self.reg * (torch.sum(self.params['W1']**2) + torch.sum(self.params['W2']**2))
     ###########################################################################
     #                            END OF YOUR CODE                             #
     ###########################################################################
@@ -325,7 +380,19 @@ class FullyConnectedNet(object):
     # deviation equal to weight_scale. Biases should be initialized to zero.   #
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    self.device = device
+    prev_dim = input_dim
+    for i, hidden_dim in enumerate(hidden_dims):
+      if i == 0:
+        self.params['W1'] = torch.normal(0.0, weight_scale, (input_dim, hidden_dim), dtype=self.dtype, device=self.device)
+        self.params['b1'] = torch.zeros((hidden_dim), dtype=self.dtype, device=self.device)
+        prev_dim = hidden_dim
+      elif i == len(hidden_dims) - 1:
+        self.params['W{}'.format(len(hidden_dims))] = torch.normal(0.0, weight_scale, (prev_dim, num_classes), dtype=self.dtype, device=self.device)
+        self.params['b{}'.format(len(hidden_dims))] = torch.zeros((num_classes), dtype=self.dtype, device=self.device)      
+      else:
+        self.params['W{}'.format(i+1)] = torch.normal(0.0, weight_scale, (prev_dim, hidden_dim), dtype=self.dtype, device=self.device)
+        self.params['b{}'.format(i+1)] = torch.zeros((hidden_dim), dtype=self.dtype, device=self.device)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -389,7 +456,11 @@ class FullyConnectedNet(object):
     # dropout forward pass.                                                    #
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    cache, out, size = {}, X, len(self.params) // 2
+    for i in range(size - 1):
+      print(i, out.shape, self.params['W{}'.format(i+1)].shape)
+      out, cache[i+1] = Linear_ReLU.forward(out, self.params['W{}'.format(i+1)], self.params['b{}'.format(i+1)]) 
+    scores, cache[size] = Linear.forward(out, self.params['W{}'.format(size)], self.params['b{}'.format(size)]) 
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -409,7 +480,15 @@ class FullyConnectedNet(object):
     # of 0.5 to simplify the expression for the gradient.                      #
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    softmax_probs, _ = Linear_Softmax.forward(out, self.params['W{}'.format(size-1)], self.params['b{}'.format(size-1)])
+    correct_class_probs = softmax_probs[torch.arange(X.shape[0]), y]
+    loss = -torch.log(correct_class_probs).mean()    
+    dx, grads['W{}'.format(size)], grads['b{}'.format(size)] = Linear_Softmax.backward(softmax_probs, cache[size], y)
+    grads['W{}'.format(size)] += 2 * self.reg * self.params['W{}'.format(size)]
+    for i in range(size - 2, -1, -1):    
+      dx, grads['W{}'.format(i+1)], grads['b{}'.format(i+1)] = Linear_ReLU.backward(dx, cache[i+1])
+      grads['W{}'.format(i+1)] += 2 * self.reg * self.params['W{}'.format(i+1)]
+      loss += self.reg * torch.sum(self.params['W{}'.format(i+1)]**2)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -418,14 +497,14 @@ class FullyConnectedNet(object):
 
 
 def create_solver_instance(data_dict, dtype, device):
-  model = TwoLayerNet(hidden_dim=200, dtype=dtype, device=device)
+  model = TwoLayerNet(hidden_dim=128, reg=1e-5, dtype=dtype, device=device)
   ##############################################################################
   # TODO: Use a Solver instance to train a TwoLayerNet that achieves at least  #
   # 50% accuracy on the validation set.                                        #
   ##############################################################################
   solver = None
   # Replace "pass" statement with your code
-  pass
+  solver = Solver(model, data_dict, device=device, num_epochs=100) 
   ##############################################################################
   #                             END OF YOUR CODE                               #
   ##############################################################################
