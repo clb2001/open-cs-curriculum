@@ -52,7 +52,19 @@ class Conv(object):
     # Note that you are NOT allowed to use anything in torch.nn in other places. #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    N, _, H, W = x.shape
+    F, _, HH, WW = w.shape
+    stride= conv_param['stride']
+    pad = conv_param['pad']
+    H_out = 1 + (H + 2 * pad - HH) // stride
+    W_out = 1 + (W + 2 * pad - WW) // stride
+    x_padded = torch.nn.functional.pad(x, pad=(pad, pad, pad, pad), mode='constant', value=0) 
+    out = torch.zeros((N, F, H_out, W_out), device=x_padded.device, dtype=x_padded.dtype)
+    for n in range(N):
+      for f in range(F):
+        for j in range(H_out):
+          for i in range(W_out):
+            out[n, f, j, i] = torch.sum(x_padded[n, :, j*stride:j*stride+HH, i*stride:i*stride+WW] * w[f]) + b[f]
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -78,7 +90,34 @@ class Conv(object):
     # TODO: Implement the convolutional backward pass.                          #
     #############################################################################
     # Replace "pass" statement with your code
-    pass
+    x, w, b, conv_param = cache
+    N, C, H, W = x.shape
+    F, _, HH, WW = w.shape
+    stride= conv_param['stride']
+    pad = conv_param['pad']
+    _, _, H_out, W_out = dout.shape
+    x_padded = torch.nn.functional.pad(x, (pad, pad, pad, pad), 'constant', 0)
+    dx = torch.zeros_like(x)
+    dw = torch.zeros_like(w)
+    db = torch.sum(dout, dim=(0, 2, 3))
+    # N: 4 ,F: 2, H_out: 5, W_out: 5, HH: 3, WW: 3, stride: 1
+    for i in range(N):
+        for f in range(F):
+            for h_prime in range(H_out):
+                for w_prime in range(W_out):
+                    # Find the corners of the slice
+                    h_start = h_prime * stride
+                    h_end = h_start + HH
+                    w_start = w_prime * stride
+                    w_end = w_start + WW
+
+                    # Update gradients for the slice
+                    # print(dx[i, :, h_start:h_end, w_start:w_end].shape)
+                    dx[i, :, h_start:h_end, w_start:w_end] += w[f, :, :, :] * dout[i, f, h_prime, w_prime]
+                    dw[f, :, :, :] += x_padded[i, :, h_start:h_end, w_start:w_end] * dout[i, f, h_prime, w_prime]
+
+    # Remove padding from dx
+    dx = dx[:, :, pad:-pad, pad:-pad]
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -111,7 +150,13 @@ class MaxPool(object):
     # TODO: Implement the max-pooling forward pass                              #
     #############################################################################
     # Replace "pass" statement with your code
-    pass
+    N, _, H, W = x.shape
+    stride= pool_param['stride']
+    pool_height = pool_param['pool_height']
+    pool_width = pool_param['pool_width']
+    H_out = 1 + (H - pool_height) // stride
+    W_out = 1 + (W - pool_width) // stride
+    
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -133,7 +178,13 @@ class MaxPool(object):
     # TODO: Implement the max-pooling backward pass                             #
     #############################################################################
     # Replace "pass" statement with your code
-    pass
+    x, pool_param = cache
+    N, C, H, W = x.shape
+    stride= pool_param['stride']
+    pool_height = pool_param['pool_height']
+    pool_width = pool_param['pool_width']
+    _, _, H_out, W_out = dout.shape
+    dx = torch.zeros_like(x)
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
