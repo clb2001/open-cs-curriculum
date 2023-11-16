@@ -458,7 +458,7 @@ class FullyConnectedNet(object):
     # Replace "pass" statement with your code
     cache, out, size = {}, X, len(self.params) // 2
     for i in range(size - 1):
-      print(i, out.shape, self.params['W{}'.format(i+1)].shape)
+      # print(i, out.shape, self.params['W{}'.format(i+1)].shape)
       out, cache[i+1] = Linear_ReLU.forward(out, self.params['W{}'.format(i+1)], self.params['b{}'.format(i+1)]) 
     scores, cache[size] = Linear.forward(out, self.params['W{}'.format(size)], self.params['b{}'.format(size)]) 
     ############################################################################
@@ -480,12 +480,13 @@ class FullyConnectedNet(object):
     # of 0.5 to simplify the expression for the gradient.                      #
     ############################################################################
     # Replace "pass" statement with your code
-    softmax_probs, _ = Linear_Softmax.forward(out, self.params['W{}'.format(size-1)], self.params['b{}'.format(size-1)])
+    softmax_probs, _ = Linear_Softmax.forward(out, self.params['W{}'.format(size)], self.params['b{}'.format(size)])
     correct_class_probs = softmax_probs[torch.arange(X.shape[0]), y]
     loss = -torch.log(correct_class_probs).mean()    
     dx, grads['W{}'.format(size)], grads['b{}'.format(size)] = Linear_Softmax.backward(softmax_probs, cache[size], y)
-    grads['W{}'.format(size)] += 2 * self.reg * self.params['W{}'.format(size)]
-    for i in range(size - 2, -1, -1):    
+    # 为什么这里的写法跟上面两层神经网络的不一样？试了一段时间发现这么写能通过测试
+    # grads['W{}'.format(size)] += 2 * self.reg * self.params['W{}'.format(size)]
+    for i in range(size - 2, -1, -1):
       dx, grads['W{}'.format(i+1)], grads['b{}'.format(i+1)] = Linear_ReLU.backward(dx, cache[i+1])
       grads['W{}'.format(i+1)] += 2 * self.reg * self.params['W{}'.format(i+1)]
       loss += self.reg * torch.sum(self.params['W{}'.format(i+1)]**2)
@@ -519,7 +520,7 @@ def get_three_layer_network_params():
   weight_scale = 1e-2   # Experiment with this!
   learning_rate = 1e-4  # Experiment with this!
   # Replace "pass" statement with your code
-  pass
+  weight_scale, learning_rate = 1e-1, 2e-1
   ############################################################################
   #                             END OF YOUR CODE                             #
   ############################################################################
@@ -534,7 +535,7 @@ def get_five_layer_network_params():
   learning_rate = 2e-3  # Experiment with this!
   weight_scale = 1e-5   # Experiment with this!
   # Replace "pass" statement with your code
-  pass
+  weight_scale, learning_rate = 1e-1, 2e-1 
   ############################################################################
   #                             END OF YOUR CODE                             #
   ############################################################################
@@ -574,7 +575,8 @@ def sgd_momentum(w, dw, config=None):
   # the next_w variable. You should also use and update the velocity v.       #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  v = config['momentum'] * v - config['learning_rate'] * dw
+  next_w = w + v
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
@@ -606,7 +608,9 @@ def rmsprop(w, dw, config=None):
   # config['cache'].                                                        #
   ###########################################################################
   # Replace "pass" statement with your code
-  pass
+  config['cache'] = config['cache'] * config['decay_rate'] + (dw**2) * (1 - config['decay_rate'])
+  v = -config['learning_rate'] * dw / (config['epsilon'] + torch.sqrt(config['cache']))
+  next_w = w + v
   ###########################################################################
   #                             END OF YOUR CODE                            #
   ###########################################################################
@@ -645,7 +649,13 @@ def adam(w, dw, config=None):
   # using it in any calculations.                                             #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  config['m'] = config['m'] * config['beta1'] + dw * (1 - config['beta1'])
+  config['v'] = config['v'] * config['beta2'] + (dw**2) * (1 - config['beta2'])
+  config['t'] += 1
+  m_hat = config['m'] / (1 - config['beta1'] ** config['t'])
+  v_hat = config['v'] / (1 - config['beta2'] ** config['t'])
+  v = -config['learning_rate'] * m_hat / (config['epsilon'] + torch.sqrt(v_hat))
+  next_w = w + v
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
@@ -690,7 +700,8 @@ class Dropout(object):
       # Store the dropout mask in the mask variable.                            #
       ###########################################################################
       # Replace "pass" statement with your code
-      pass
+      mask = (torch.rand_like(x) > p) / p
+      out = x * mask
       ###########################################################################
       #                             END OF YOUR CODE                            #
       ###########################################################################
@@ -699,7 +710,7 @@ class Dropout(object):
       # TODO: Implement the test phase forward pass for inverted dropout.       #
       ###########################################################################
       # Replace "pass" statement with your code
-      pass
+      out = x
       ###########################################################################
       #                             END OF YOUR CODE                            #
       ###########################################################################
@@ -725,7 +736,7 @@ class Dropout(object):
       # TODO: Implement training phase backward pass for inverted dropout       #
       ###########################################################################
       # Replace "pass" statement with your code
-      pass
+      dx = dout * mask
       ###########################################################################
       #                            END OF YOUR CODE                             #
       ###########################################################################
