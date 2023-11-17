@@ -383,16 +383,11 @@ class FullyConnectedNet(object):
     self.device = device
     prev_dim = input_dim
     for i, hidden_dim in enumerate(hidden_dims):
-      if i == 0:
-        self.params['W1'] = torch.normal(0.0, weight_scale, (input_dim, hidden_dim), dtype=self.dtype, device=self.device)
-        self.params['b1'] = torch.zeros((hidden_dim), dtype=self.dtype, device=self.device)
-        prev_dim = hidden_dim
-      elif i == len(hidden_dims) - 1:
-        self.params['W{}'.format(len(hidden_dims))] = torch.normal(0.0, weight_scale, (prev_dim, num_classes), dtype=self.dtype, device=self.device)
-        self.params['b{}'.format(len(hidden_dims))] = torch.zeros((num_classes), dtype=self.dtype, device=self.device)      
-      else:
-        self.params['W{}'.format(i+1)] = torch.normal(0.0, weight_scale, (prev_dim, hidden_dim), dtype=self.dtype, device=self.device)
-        self.params['b{}'.format(i+1)] = torch.zeros((hidden_dim), dtype=self.dtype, device=self.device)
+      self.params['W{}'.format(i+1)] = torch.normal(0.0, weight_scale, (prev_dim, hidden_dim), dtype=self.dtype, device=self.device)
+      self.params['b{}'.format(i+1)] = torch.zeros((hidden_dim), dtype=self.dtype, device=self.device)
+      prev_dim = hidden_dim
+    self.params['W{}'.format(self.num_layers)] = torch.normal(0.0, weight_scale, (prev_dim, num_classes), dtype=self.dtype, device=self.device)
+    self.params['b{}'.format(self.num_layers)] = torch.zeros((num_classes), dtype=self.dtype, device=self.device)      
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -456,11 +451,12 @@ class FullyConnectedNet(object):
     # dropout forward pass.                                                    #
     ############################################################################
     # Replace "pass" statement with your code
-    cache, out, size = {}, X, len(self.params) // 2
-    for i in range(size - 1):
-      # print(i, out.shape, self.params['W{}'.format(i+1)].shape)
-      out, cache[i+1] = Linear_ReLU.forward(out, self.params['W{}'.format(i+1)], self.params['b{}'.format(i+1)]) 
-    scores, cache[size] = Linear.forward(out, self.params['W{}'.format(size)], self.params['b{}'.format(size)]) 
+    cache, dropout_cache, out = {}, {}, X 
+    for i in range(self.num_layers-1):
+      out, cache[i+1] = Linear_ReLU.forward(out, self.params['W{}'.format(i+1)], self.params['b{}'.format(i+1)])
+      if self.use_dropout:
+        out, dropout_cache[i+1] = Dropout.forward(out, self.dropout_param)
+    scores, cache[self.num_layers] = Linear.forward(out, self.params['W{}'.format(self.num_layers)], self.params['b{}'.format(self.num_layers)])
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -479,17 +475,18 @@ class FullyConnectedNet(object):
     # automated tests, make sure that your L2 regularization includes a factor #
     # of 0.5 to simplify the expression for the gradient.                      #
     ############################################################################
-    # Replace "pass" statement with your code
-    softmax_probs, _ = Linear_Softmax.forward(out, self.params['W{}'.format(size)], self.params['b{}'.format(size)])
-    correct_class_probs = softmax_probs[torch.arange(X.shape[0]), y]
-    loss = -torch.log(correct_class_probs).mean()    
-    dx, grads['W{}'.format(size)], grads['b{}'.format(size)] = Linear_Softmax.backward(softmax_probs, cache[size], y)
-    # 为什么这里的写法跟上面两层神经网络的不一样？试了一段时间发现这么写能通过测试
-    # grads['W{}'.format(size)] += 2 * self.reg * self.params['W{}'.format(size)]
-    for i in range(size - 2, -1, -1):
-      dx, grads['W{}'.format(i+1)], grads['b{}'.format(i+1)] = Linear_ReLU.backward(dx, cache[i+1])
-      grads['W{}'.format(i+1)] += 2 * self.reg * self.params['W{}'.format(i+1)]
-      loss += self.reg * torch.sum(self.params['W{}'.format(i+1)]**2)
+    # Replace "pass" statement with your code 
+    # 原来的做法不对，少实现一层
+    loss, dout = softmax_loss(scores, y)
+    loss += self.reg * torch.sum(self.params['W{}'.format(self.num_layers)]**2)
+    dx, grads['W{}'.format(self.num_layers)], grads['b{}'.format(self.num_layers)] = Linear.backward(dout, cache[self.num_layers])
+    grads['W{}'.format(self.num_layers)] += 2 * self.reg * self.params['W{}'.format(self.num_layers)]
+    for i in range(self.num_layers - 1, 0, -1):
+      if self.use_dropout:
+        dx = Dropout.backward(dx, dropout_cache[i])
+      dx, grads['W{}'.format(i)], grads['b{}'.format(i)] = Linear_ReLU.backward(dx, cache[i])
+      grads['W{}'.format(i)] += 2 * self.reg * self.params['W{}'.format(i)]
+      loss += self.reg * torch.sum(self.params['W{}'.format(i)]**2)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -517,8 +514,6 @@ def get_three_layer_network_params():
   # TODO: Change weight_scale and learning_rate so your model achieves 100%  #
   # training accuracy within 20 epochs.                                      #
   ############################################################################
-  weight_scale = 1e-2   # Experiment with this!
-  learning_rate = 1e-4  # Experiment with this!
   # Replace "pass" statement with your code
   weight_scale, learning_rate = 1e-1, 2e-1
   ############################################################################
@@ -532,8 +527,6 @@ def get_five_layer_network_params():
   # TODO: Change weight_scale and learning_rate so your model achieves 100%  #
   # training accuracy within 20 epochs.                                      #
   ############################################################################
-  learning_rate = 2e-3  # Experiment with this!
-  weight_scale = 1e-5   # Experiment with this!
   # Replace "pass" statement with your code
   weight_scale, learning_rate = 1e-1, 2e-1 
   ############################################################################
