@@ -57,14 +57,18 @@ def three_layer_convnet(x, params):
   # TODO: Implement the forward pass for the three-layer ConvNet.              
   # The network have the following architecture:                               
   # 1. Conv layer (with bias) with 32 5x5 filters, with zero-padding of 2     
-  #   2. ReLU                                                                  
+  # 2. ReLU                                                                  
   # 3. Conv layer (with bias) with 16 3x3 filters, with zero-padding of 1     
   # 4. ReLU                                                                   
   # 5. Fully-connected layer (with bias) to compute scores for 10 classes    
   # Hint: F.linear, F.conv2d, F.relu, flatten (implemented above)                                   
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
+  out = F.conv2d(x, conv_w1, bias=conv_b1, padding=2)
+  out = F.relu(out)
+  out = F.conv2d(out, conv_w2, bias=conv_b2, padding=1)
+  out = F.relu(out)
+  scores = F.linear(out.view(out.shape[0], -1), fc_w, fc_b)
   ##############################################################################
   #                                 END OF YOUR CODE                             
   ##############################################################################
@@ -105,8 +109,24 @@ def initialize_three_layer_conv_part2(dtype=torch.float, device='cpu'):
   # You are given all the necessary variables above for initializing weights. 
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
-  ##############################################################################
+  # 默认第一个卷积层的padding=2，第二个卷积层的padding=1，stride=1
+  conv_w1 = nn.init.kaiming_normal_(torch.empty(channel_1, C, kernel_size_1, kernel_size_1, dtype=dtype, device=device))
+  conv_w1.requires_grad = True
+  H = (H + 2 * 2 - kernel_size_1) // 1 + 1
+  W = (W + 2 * 2 - kernel_size_1) // 1 + 1
+  conv_b1 = nn.init.zeros_(torch.empty(channel_1, dtype=dtype, device=device))
+  conv_b1.requires_grad = True
+  conv_w2 = nn.init.kaiming_normal_(torch.empty(channel_2, channel_1, kernel_size_2, kernel_size_2, dtype=dtype, device=device))
+  conv_w2.requires_grad = True
+  H = (H + 2 * 2 - kernel_size_1) // 1 + 1
+  W = (W + 2 * 2 - kernel_size_1) // 1 + 1
+  conv_b2 = nn.init.zeros_(torch.empty(channel_2, dtype=dtype, device=device))
+  conv_b2.requires_grad = True
+  fc_w = nn.init.kaiming_normal_(torch.empty(num_classes, H * W * channel_2, dtype=dtype, device=device))
+  fc_w.requires_grad = True
+  fc_b = nn.init.zeros_(torch.empty(num_classes, dtype=dtype, device=device))
+  fc_b.requires_grad = True
+  ##############################################################################  print(out.shape)
   #                                 END OF YOUR CODE                            
   ##############################################################################
   return [conv_w1, conv_b1, conv_w2, conv_b2, fc_w, fc_b]
@@ -123,11 +143,11 @@ class ThreeLayerConvNet(nn.Module):
     super().__init__()
     ############################################################################
     # TODO: Set up the layers you need for a three-layer ConvNet with the       
-    # architecture defined below. You should initialize the weight  of the
+    # architecture defined below. You should initialize the weight of the
     # model using Kaiming normal initialization, and zero out the bias vectors.     
     #                                       
     # The network architecture should be the same as in Part II:          
-  #   1. Convolutional layer with channel_1 5x5 filters with zero-padding of 2  
+    #   1. Convolutional layer with channel_1 5x5 filters with zero-padding of 2  
     #   2. ReLU                                   
     #   3. Convolutional layer with channel_2 3x3 filters with zero-padding of 1
     #   4. ReLU                                   
@@ -140,7 +160,15 @@ class ThreeLayerConvNet(nn.Module):
     # HINT: nn.Conv2d, nn.init.kaiming_normal_, nn.init.zeros_            
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    self.fc1 = nn.Conv2d(in_channel, channel_1, 5, padding=2)
+    self.fc2 = nn.Conv2d(channel_1, channel_2, 3, padding=1)
+    self.fc3 = nn.Linear(32 * 32 * channel_2, num_classes)
+    nn.init.kaiming_normal_(self.fc1.weight)
+    nn.init.kaiming_normal_(self.fc2.weight)
+    nn.init.kaiming_normal_(self.fc3.weight)
+    nn.init.zeros_(self.fc1.bias)
+    nn.init.zeros_(self.fc2.bias)
+    nn.init.zeros_(self.fc3.bias)
     ############################################################################
     #                           END OF YOUR CODE                            
     ############################################################################
@@ -154,7 +182,8 @@ class ThreeLayerConvNet(nn.Module):
     # Hint: flatten (implemented at the start of part II)                          
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    out = flatten(F.relu(self.fc2(F.relu(self.fc1(x)))))
+    scores = self.fc3(out)
     ############################################################################
     #                            END OF YOUR CODE                          
     ############################################################################
@@ -186,7 +215,9 @@ def initialize_three_layer_conv_part3():
   # momentum, with L2 weight decay of 1e-4.                    
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
+  model = ThreeLayerConvNet(C, channel_1, channel_2, num_classes)
+  optimizer = optim.SGD(model.parameters(), lr=learning_rate,
+                        weight_decay=weight_decay)  
   ##############################################################################
   #                                 END OF YOUR CODE                            
   ##############################################################################
@@ -244,7 +275,17 @@ def initialize_three_layer_conv_part4():
   # Hint: nn.Sequential, Flatten (implemented at the start of Part IV)   
   ####################################################################################
   # Replace "pass" statement with your code
-  pass
+  model = nn.Sequential(OrderedDict([
+    ('fc1', nn.Conv2d(C, channel_1, kernel_size_1, padding=pad_size_1)),
+    ('relu1', nn.ReLU()),
+    ('fc2', nn.Conv2d(channel_1, channel_2, kernel_size_2, padding=pad_size_2)),
+    ('relu2', nn.ReLU()),
+    ('flatten', Flatten()),
+    ('fc3', nn.Linear(H * W * channel_2, num_classes)),
+  ]))
+  optimizer = optim.SGD(model.parameters(), lr=learning_rate, 
+                        weight_decay=weight_decay,
+                        momentum=momentum, nesterov=True)
   ################################################################################
   #                                 END OF YOUR CODE                             
   ################################################################################
@@ -271,7 +312,14 @@ class PlainBlock(nn.Module):
     # Store the result in self.net.                                            
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    self.net = nn.Sequential(OrderedDict([
+      ('batch_normalization_1', nn.BatchNorm2d(Cin)),
+      ('relu1', nn.ReLU()),
+      ('fc1', nn.Conv2d(Cin, Cout, 3, stride = 2 if downsample else 1, padding=1)),
+      ('batch_normalization_2', nn.BatchNorm2d(Cout)),
+      ('relu2', nn.ReLU()),
+      ('fc2', nn.Conv2d(Cout, Cout, 3, padding=1)),
+    ]))
     ############################################################################
     #                                 END OF YOUR CODE                         #
     ############################################################################
@@ -295,7 +343,15 @@ class ResidualBlock(nn.Module):
     # Store the main block in self.block and the shortcut in self.shortcut.    #
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    if Cin == Cout and not downsample:
+      self.block = PlainBlock(Cin, Cout, False)
+      self.shortcut = Cin
+    elif Cin != Cout and not downsample:
+      self.block = PlainBlock(Cin, Cout, False)
+      self.shortcut = nn.Conv2d(Cin, Cout, 1, stride=1)
+    else:
+      self.block = PlainBlock(Cin, Cout, True)
+      self.shortcut = nn.Conv2d(Cin, Cout, 1, stride=2)
     ############################################################################
     #                                 END OF YOUR CODE                         #
     ############################################################################
@@ -315,7 +371,10 @@ class ResNet(nn.Module):
     # Store the model in self.cnn.                                             #
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    print(stage_args)
+    print(stage_args[-1][1])
+    for stage_arg in stage_args:
+      pass
     ############################################################################
     #                                 END OF YOUR CODE                         #
     ############################################################################
@@ -328,7 +387,7 @@ class ResNet(nn.Module):
     # Store the output in `scores`.                                            #
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    scores = self.cnn(x) + self.fc(x)
     ############################################################################
     #                                 END OF YOUR CODE                         #
     ############################################################################
