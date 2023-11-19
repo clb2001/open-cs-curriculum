@@ -421,8 +421,11 @@ class DeepConvNet(object):
       # X: (N, C, H, W), Kernel: (num_filters[i], C, 3, 3)
       for i, num_filter in enumerate(num_filters):
         self.params['W{}'.format(i+1)] = torch.normal(0.0, weight_scale, (num_filter, C, 3, 3), dtype=self.dtype, device=self.device)
-        self.params['b{}'.format(i+1)] = torch.zeros((num_filter), dtype=self.dtype, device=self.device)
+        self.params['b{}'.format(i+1)] = torch.zeros((num_filter), dtype=self.dtype, device=self.device)        
         C = num_filter
+        if self.batchnorm:
+          self.params['gamma{}'.format(i+1)] = torch.ones(C, dtype=self.dtype, device=self.device)
+          self.params['beta{}'.format(i+1)] = torch.zeros(C, dtype=self.dtype, device=self.device)  
         if i in self.max_pools:
           self.coff['h{}'.format(i+2)], self.coff['w{}'.format(i+2)] = self.coff['h{}'.format(i+1)]//2, self.coff['w{}'.format(i+1)]//2
         else:
@@ -430,12 +433,15 @@ class DeepConvNet(object):
       self.params['W{}'.format(self.num_layers)] = torch.normal(0.0, weight_scale, 
         (num_filters[-1]*self.coff['h{}'.format(self.num_layers)]*self.coff['w{}'.format(self.num_layers)], num_classes), 
         dtype=self.dtype, device=self.device)
-      self.params['b{}'.format(self.num_layers)] = torch.zeros((num_classes), dtype=self.dtype, device=self.device)
+      self.params['b{}'.format(self.num_layers)] = torch.zeros((num_classes), dtype=self.dtype, device=self.device) 
     else:
       for i, num_filter in enumerate(num_filters):
         self.params['W{}'.format(i+1)] = kaiming_initializer(C, num_filter, 3, True, self.device, self.dtype)
-        self.params['b{}'.format(i+1)] = torch.zeros((num_filter), dtype=self.dtype, device=self.device)
+        self.params['b{}'.format(i+1)] = torch.zeros((num_filter), dtype=self.dtype, device=self.device) 
         C = num_filter
+        if self.batchnorm:
+          self.params['gamma{}'.format(i+1)] = torch.ones(C, dtype=self.dtype, device=self.device)
+          self.params['beta{}'.format(i+1)] = torch.zeros(C, dtype=self.dtype, device=self.device) 
         if i in self.max_pools:
           self.coff['h{}'.format(i+2)], self.coff['w{}'.format(i+2)] = self.coff['h{}'.format(i+1)]//2, self.coff['w{}'.format(i+1)]//2
         else:
@@ -443,7 +449,6 @@ class DeepConvNet(object):
       self.params['W{}'.format(self.num_layers)] = kaiming_initializer(num_filters[-1]*self.coff['h{}'.format(self.num_layers)]*
         self.coff['w{}'.format(self.num_layers)], num_classes, None, False, self.device, self.dtype)
       self.params['b{}'.format(self.num_layers)] = torch.zeros((num_classes), dtype=self.dtype, device=self.device)              
-    # TODO: batchnorm scale
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -547,9 +552,17 @@ class DeepConvNet(object):
     cache, out = {}, X 
     for i in range(self.num_layers-1):
       if i in self.max_pools:
-        out, cache[i+1] = Conv_ReLU_Pool.forward(out, self.params['W{}'.format(i+1)], self.params['b{}'.format(i+1)], conv_param, pool_param)
+        if self.batchnorm:
+          out, cache[i+1] = Conv_BatchNorm_ReLU_Pool.forward(out, self.params['W{}'.format(i+1)], self.params['b{}'.format(i+1)], 
+                            self.params['gamma{}'.format(i+1)], self.params['beta{}'.format(i+1)], conv_param, self.bn_params[i], pool_param)
+        else:
+          out, cache[i+1] = Conv_ReLU_Pool.forward(out, self.params['W{}'.format(i+1)], self.params['b{}'.format(i+1)], conv_param, pool_param)
       else:
-        out, cache[i+1] = Conv_ReLU.forward(out, self.params['W{}'.format(i+1)], self.params['b{}'.format(i+1)], conv_param)
+        if self.batchnorm:
+          out, cache[i+1] = Conv_BatchNorm_ReLU.forward(out, self.params['W{}'.format(i+1)], self.params['b{}'.format(i+1)], 
+                            self.params['gamma{}'.format(i+1)], self.params['beta{}'.format(i+1)], conv_param, self.bn_params[i])
+        else:
+          out, cache[i+1] = Conv_ReLU.forward(out, self.params['W{}'.format(i+1)], self.params['b{}'.format(i+1)], conv_param)
     scores, cache[self.num_layers] = Linear.forward(out, self.params['W{}'.format(self.num_layers)], self.params['b{}'.format(self.num_layers)])
     ############################################################################
     #                             END OF YOUR CODE                             #
@@ -576,9 +589,15 @@ class DeepConvNet(object):
     grads['W{}'.format(self.num_layers)] += 2 * self.reg * self.params['W{}'.format(self.num_layers)]
     for i in range(self.num_layers - 1, 0, -1):
       if (i-1) in self.max_pools:
-        dx, grads['W{}'.format(i)], grads['b{}'.format(i)] = Conv_ReLU_Pool.backward(dx, cache[i])
+        if self.batchnorm:
+          dx, grads['W{}'.format(i)], grads['b{}'.format(i)], grads['gamma{}'.format(i)], grads['beta{}'.format(i)] = Conv_BatchNorm_ReLU_Pool.backward(dx, cache[i])
+        else:
+          dx, grads['W{}'.format(i)], grads['b{}'.format(i)] = Conv_ReLU_Pool.backward(dx, cache[i])
       else:
-        dx, grads['W{}'.format(i)], grads['b{}'.format(i)] = Conv_ReLU.backward(dx, cache[i])
+        if self.batchnorm:
+          dx, grads['W{}'.format(i)], grads['b{}'.format(i)], grads['gamma{}'.format(i)], grads['beta{}'.format(i)] = Conv_BatchNorm_ReLU.backward(dx, cache[i])
+        else:
+          dx, grads['W{}'.format(i)], grads['b{}'.format(i)] = Conv_ReLU.backward(dx, cache[i])
       grads['W{}'.format(i)] += 2 * self.reg * self.params['W{}'.format(i)]
       loss += self.reg * torch.sum(self.params['W{}'.format(i)]**2)   
     ############################################################################
@@ -763,12 +782,13 @@ class BatchNorm(object):
       #######################################################################
       # Replace "pass" statement with your code
       sample_mean = torch.mean(x, dim=0)
-      sample_var = torch.std(x, dim=0)
-      x_normalized = (x - sample_mean) / (sample_var + eps)
+      # sample_var = torch.var(x, dim=0), 这么算是错的，分母是N-1，找了好久的bug
+      sample_var = torch.mean((x - sample_mean)**2, dim=0)
+      x_normalized = (x - sample_mean) / torch.sqrt(sample_var + eps)
       out = x_normalized * gamma + beta
       running_mean = momentum * running_mean + (1 - momentum) * sample_mean
       running_var = momentum * running_var + (1 - momentum) * sample_var
-      cache = (x, x_normalized, gamma, beta, sample_mean, sample_var, eps)
+      cache = (x_normalized, gamma, sample_var, eps)    
       #######################################################################
       #                           END OF YOUR CODE                          #
       #######################################################################
@@ -780,9 +800,8 @@ class BatchNorm(object):
       # Store the result in the out variable.                               #
       #######################################################################
       # Replace "pass" statement with your code
-      x_normalized = (x - running_mean) / (running_var + eps)
+      x_normalized = (x - running_mean) / torch.sqrt(running_var + eps)
       out = x_normalized * gamma + beta
-      cache = (x, x_normalized, gamma, beta, running_mean, running_var, eps)
       #######################################################################
       #                           END OF YOUR CODE                          #
       #######################################################################
@@ -822,7 +841,14 @@ class BatchNorm(object):
     # Don't forget to implement train and test mode separately.               #
     ###########################################################################
     # Replace "pass" statement with your code
-    
+    # 什么叫implement train and test mode?
+    x_normalized, gamma, var, eps = cache
+    N, D = dout.shape
+    COFF = 1 / (N * torch.sqrt(var + eps))
+    dx_norm = dout * gamma
+    dx = COFF * (N * dx_norm - torch.sum(dx_norm, dim=0) - x_normalized * torch.sum(dx_norm * x_normalized, dim=0))
+    dgamma = torch.sum(dout * x_normalized, dim=0)
+    dbeta = torch.sum(dout, dim=0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -853,7 +879,13 @@ class BatchNorm(object):
     # single statement; our implementation fits on a single 80-character line.#
     ###########################################################################
     # Replace "pass" statement with your code
-    pass
+    # 跟上面的实现方法差不多
+    x_normalized, gamma, var, eps = cache
+    N, D = dout.shape
+    COFF = gamma / (N * torch.sqrt(var + eps))
+    dgamma = torch.sum(dout * x_normalized, dim=0)
+    dbeta = torch.sum(dout, dim=0)  
+    dx = COFF * (N * dout - dbeta - x_normalized * dgamma)  
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -896,7 +928,11 @@ class SpatialBatchNorm(object):
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
     # Replace "pass" statement with your code
-    pass
+    N, C, H, W = x.shape
+    x_reshaped = x.permute(0, 2, 3, 1).contiguous().view(-1, C)
+    out, cache = BatchNorm.forward(x_reshaped, gamma, beta, bn_param)
+    # out = out.view(N, C, H, W).contiguous(), 这个实现跟下面的实现有区别
+    out = out.view(N, H, W, C).permute(0, 3, 1, 2).contiguous()
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -925,7 +961,10 @@ class SpatialBatchNorm(object):
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
     # Replace "pass" statement with your code
-    pass
+    N, C, H, W = dout.shape
+    dout = dout.permute(0, 2, 3, 1).contiguous().view(-1, C)
+    dx, dgamma, dbeta = BatchNorm.backward_alt(dout, cache)
+    dx = dx.view(N, H, W, C).permute(0, 3, 1, 2).contiguous()
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
