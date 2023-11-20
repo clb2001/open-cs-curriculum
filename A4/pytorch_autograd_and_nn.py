@@ -345,13 +345,13 @@ class ResidualBlock(nn.Module):
     # Replace "pass" statement with your code
     if Cin == Cout and not downsample:
       self.block = PlainBlock(Cin, Cout, False)
-      self.shortcut = Cin
+      self.shortcut = nn.Sequential(nn.Conv2d(Cin, Cout, 3, padding=1, bias=False))
     elif Cin != Cout and not downsample:
       self.block = PlainBlock(Cin, Cout, False)
-      self.shortcut = nn.Conv2d(Cin, Cout, 1, stride=1)
+      self.shortcut = nn.Sequential(nn.Conv2d(Cin, Cout, 1, stride=1))
     else:
       self.block = PlainBlock(Cin, Cout, True)
-      self.shortcut = nn.Conv2d(Cin, Cout, 1, stride=2)
+      self.shortcut = nn.Sequential(nn.Conv2d(Cin, Cout, 1, stride=2))
     ############################################################################
     #                                 END OF YOUR CODE                         #
     ############################################################################
@@ -371,10 +371,11 @@ class ResNet(nn.Module):
     # Store the model in self.cnn.                                             #
     ############################################################################
     # Replace "pass" statement with your code
-    print(stage_args)
-    print(stage_args[-1][1])
+    stages = list()
+    stages.append(ResNetStem(Cin, stage_args[0][0]))
     for stage_arg in stage_args:
-      pass
+      stages.append(ResNetStage(*stage_arg, block))
+    self.cnn = nn.Sequential(*stages)
     ############################################################################
     #                                 END OF YOUR CODE                         #
     ############################################################################
@@ -387,7 +388,10 @@ class ResNet(nn.Module):
     # Store the output in `scores`.                                            #
     ############################################################################
     # Replace "pass" statement with your code
-    scores = self.cnn(x) + self.fc(x)
+    N, C, H, W = self.cnn(x).shape
+    # 现在需要输入的tensor后面三个维度C*H*W=self.fc.in_features
+    pool = nn.AdaptiveAvgPool2d((int)((self.fc.in_features // C)**0.5))
+    scores = self.fc(flatten(pool(self.cnn(x))))
     ############################################################################
     #                                 END OF YOUR CODE                         #
     ############################################################################
@@ -409,7 +413,23 @@ class ResidualBottleneckBlock(nn.Module):
     # Store the main block in self.block and the shortcut in self.shortcut.    #
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    self.block = nn.Sequential(OrderedDict([
+      ('batch_normalization_1', nn.BatchNorm2d(Cin)),
+      ('relu1', nn.ReLU()),
+      ('fc1', nn.Conv2d(Cin, Cout // 4, 1, stride = 2 if downsample else 1)),
+      ('batch_normalization_2', nn.BatchNorm2d(Cout // 4)),
+      ('relu2', nn.ReLU()),
+      ('fc2', nn.Conv2d(Cout // 4, Cout // 4, 3, padding=1)),
+      ('batch_normalization_3', nn.BatchNorm2d(Cout // 4)),
+      ('relu3', nn.ReLU()),
+      ('fc3', nn.Conv2d(Cout // 4, Cout, 1))
+    ]))
+    if Cin == Cout and not downsample:
+      self.shortcut = nn.Sequential(nn.Conv2d(Cin, Cout, 3, padding=1, bias=False))
+    elif Cin != Cout and not downsample:
+      self.shortcut = nn.Sequential(nn.Conv2d(Cin, Cout, 1, stride=1))
+    else:
+      self.shortcut = nn.Sequential(nn.Conv2d(Cin, Cout, 1, stride=2))
     ############################################################################
     #                                 END OF YOUR CODE                         #
     ############################################################################
