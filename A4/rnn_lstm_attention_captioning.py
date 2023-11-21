@@ -9,6 +9,8 @@ import torch.nn as nn
 from a4_helper import *
 from torch.nn.parameter import Parameter 
 
+to_double_cuda = {'dtype': torch.double, 'device': 'cuda'}
+
 def hello():
   """
   This is a sample function that we will try to import and run to ensure that
@@ -102,7 +104,9 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
     # Hint: You can use torch.tanh()                                             #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    a = torch.matmul(prev_h, Wh) + torch.matmul(x, Wx) + b
+    next_h = torch.tanh(a)
+    cache = (x, prev_h, Wx, Wh, a)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -132,7 +136,16 @@ def rnn_step_backward(dnext_h, cache):
     # of the output value from tanh.                                             #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    # N = 4, H = 6 
+    # dnext_h.shape: [4, 6], x.shape: [4, 5], prev_h.shape: [4, 6], 
+    # Wx.shape: [5, 6], Wh.shape: [6, 6], a.shape: [4, 6]
+    x, prev_h, Wx, Wh, a = cache
+    da = (1 - torch.tanh(a)**2) * dnext_h # [4, 6]
+    dWx = torch.matmul(x.t(), da)
+    dWh = torch.matmul(prev_h.t(), da)
+    dx = torch.matmul(da, Wx.t())
+    dprev_h = torch.matmul(da, Wh.t())
+    db = torch.sum(da, dim=0)  
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -164,7 +177,16 @@ def rnn_forward(x, h0, Wx, Wh, b):
     # above. You can use a for loop to help compute the forward pass.            #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    N, T, _ = x.shape
+    _, H = h0.shape
+    cache = list()
+    h = torch.zeros((N, T, H), **to_double_cuda)
+    tmp = h0
+    for i in range(T):
+      # 这里要注意，不能直接赋值给h[:, i, :]，否则用pytorch计算out.backward(dout)时会报错
+      tmp, tmp_cache = rnn_step_forward(x[:, i, :], tmp, Wx, Wh, b)
+      h[:, i, :] = tmp
+      cache.append(tmp_cache)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -197,7 +219,22 @@ def rnn_backward(dh, cache):
     # defined above. You can use a for loop to help compute the backward pass.   #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    N, T, H = dh.shape
+    _, D = cache[0][0].shape
+    dx = torch.zeros((N, T, D), **to_double_cuda)
+    dh0 = torch.zeros((N, H), **to_double_cuda)
+    dWx = torch.zeros((D, H), **to_double_cuda)
+    dWh = torch.zeros((H, H), **to_double_cuda)
+    db = torch.zeros((H), **to_double_cuda)
+    dprev_h = 0
+    for i in range(T - 1, -1, -1):
+      dout = dprev_h + dh[:, i, :]
+      # 这个dprev_h的bug找了半天都没发现
+      dx[:, i, :], dprev_h, dWx_, dWh_, db_ = rnn_step_backward(dout, cache[i])
+      dWx += dWx_
+      dWh += dWh_
+      db += db_
+    dh0 = dprev_h
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -270,7 +307,7 @@ class WordEmbedding(nn.Module):
 
   Inputs:
   - x: Integer array of shape (N, T) giving indices of words. Each element idx
-    of x muxt be in the range 0 <= idx < V.
+    of x must be in the range 0 <= idx < V.
 
   Returns a tuple of:
   - out: Array of shape (N, T, D) giving word vectors for all input words.
@@ -292,7 +329,11 @@ class WordEmbedding(nn.Module):
       # HINT: This can be done in one line using PyTorch's array indexing.           #
       ##############################################################################
       # Replace "pass" statement with your code
-      pass
+      # out = F.embedding(x, self.W_embed)
+      # 等价于-->索引切片嵌入权重矩阵
+      # N, T = x.shape
+      # V, D = self.W_embed.shape
+      out = self.W_embed[x]
       ##############################################################################
       #                               END OF YOUR CODE                             #
       ##############################################################################
@@ -337,7 +378,8 @@ def temporal_softmax_loss(x, y, ignore_index=None):
     # all timesteps and *averaging* across the minibatch.                        #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    N, T, V = x.shape
+    loss = F.cross_entropy(x.view(N * T, V), y.view(N * T), ignore_index=ignore_index, reduction='sum') / N
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -406,7 +448,7 @@ class CaptioningRNN(nn.Module):
         #       feature and pooling=False to get the CNN activation map.         #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        FeatureExtractor()
         #############################################################################
         #                              END OF YOUR CODE                             #
         #############################################################################
