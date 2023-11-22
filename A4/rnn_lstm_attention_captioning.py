@@ -821,6 +821,7 @@ def dot_product_attention(prev_h, A):
     attn_weights = torch.zeros((N, D_a*_), dtype=prev_h.dtype, device=prev_h.device)
     attn = torch.zeros((N, H), dtype=prev_h.dtype, device=prev_h.device)
     A_ = A.clone().view(N, H, -1) # (N, H, 16)
+    # 这里的计算有点慢，可以优化一下（懒得弄了）
     for n in range(N):
       attn_weights[n] = torch.matmul(prev_h[n], A_[n])
     # ipynb里面给的公式有问题，要除以sqrt(H)

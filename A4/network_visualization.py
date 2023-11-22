@@ -47,7 +47,13 @@ def compute_saliency_maps(X, y, model):
   # Hint: X.grad.data stores the gradients                                     #
   ##############################################################################
   # Replace "pass" statement with your code
-  
+  from torch.autograd import Variable
+  X_var = Variable(X, requires_grad=True)
+  scores = model(X_var)
+  score = scores.gather(1, y.view(-1, 1)).squeeze()
+  score.backward(torch.ones((len(y)), dtype=X.dtype, device=X.device))
+  saliency = X_var.grad.data
+  saliency = saliency.abs().max(dim=1)[0]  
   ##############################################################################
   #               END OF YOUR CODE                                             #
   ##############################################################################
@@ -88,7 +94,23 @@ def make_adversarial_attack(X, target_y, model, max_iter=100, verbose=True):
   # You can print your progress over iterations to check your algorithm.       #
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
+  from torch.autograd import Variable
+  X_adv = Variable(X.data, requires_grad=True)
+  max_score = 0
+  for i in range(max_iter):
+    scores = model(X_adv)
+    target_score = scores[0, target_y]
+    if target_score == 1:
+        break
+    model.zero_grad()
+    target_score.backward()
+    gradient = X_adv.grad.data
+    normalized_gradient = gradient / gradient.norm(2)
+    X_adv.data += learning_rate * normalized_gradient
+    max_score = target_score if target_score > max_score else max_score
+    if verbose and i % 10 == 0:
+        print("Iteration {}, Target Score: {:.3f}, Max Score: {:.3f}"
+              .format(i, target_score.item(), max_score.item()))
   ##############################################################################
   #                             END OF YOUR CODE                               #
   ##############################################################################
@@ -123,7 +145,16 @@ def class_visualization_step(img, target_y, model, **kwargs):
     # after each step.                                                     #
     ########################################################################
     # Replace "pass" statement with your code
-    pass
+    from torch.autograd import Variable
+    img = Variable(img, requires_grad=True)
+    for i in range(100): 
+        scores = model(img)
+        target_score = scores[0, target_y]
+        l2_loss = l2_reg * torch.norm(img)
+        loss = -target_score + l2_loss
+        loss.backward()
+        img.data += learning_rate * img.grad.data
+        img.grad.data.zero_()    
     ########################################################################
     #                             END OF YOUR CODE                         #
     ########################################################################
