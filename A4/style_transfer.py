@@ -31,7 +31,8 @@ def content_loss(content_weight, content_current, content_original):
     # TODO: Compute the content loss for style transfer.                         #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    content_loss = content_weight * (torch.sum((content_current - content_original)**2))
+    return content_loss
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -57,7 +58,10 @@ def gram_matrix(features, normalize=True):
     # Don't forget to implement for both normalized and non-normalized version   #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    N, C, H, W = features.shape
+    gram = torch.zeros((N ,C, C), dtype=features.dtype, device=features.device)
+    if normalize:
+      gram /= (H * W * C)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
