@@ -33,7 +33,9 @@ def generate_token_dict(vocab):
     # elements in between as consequetive number.                                #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    # 做了上一个rnn，感觉2022年的版本代码提示要简明一些，当然框架也更加精炼
+    for i, v in enumerate(vocab):
+        token_dict[v] = i
     ##############################################################################
     #               END OF YOUR CODE                                             #
     ##############################################################################
@@ -74,7 +76,13 @@ def prepocess_input_sequence(
     # appropriate value for the complete token.
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    input_list = input_str.split(' ')
+    for l in input_list:
+        if l in spc_tokens:
+            out.append(token_dict[l])
+        else:
+            for n in l:
+                out.append(token_dict[n])
     ##############################################################################
     #               END OF YOUR CODE                                             #
     ##############################################################################
