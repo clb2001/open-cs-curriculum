@@ -124,7 +124,26 @@ def scaled_dot_product_two_loop_single(
     # using weighted sum becomes an output to the Kth query vector                #
     ###############################################################################
     # Replace "pass" statement with your code
-    pass
+    K, M = query.shape
+    out = torch.zeros_like(query)
+    # 完全就是按照《模式识别与机器学习》这本书上来的，不知道下面这个实现怎么错了
+    # for i in range(K):
+    #     temp = torch.zeros((M, M), dtype=key.dtype, device=key.device)
+    #     for j in range(M):
+    #         temp[j] = torch.matmul(key[:, j], query) / (M ** 0.5)
+    #     out[i] = torch.matmul(value[i], F.softmax(temp, dim=1))
+    
+    for i in range(K):
+        temp = torch.zeros((K, K), dtype=key.dtype, device=key.device)
+        for j in range(K):
+            temp[j] = torch.matmul(key, query[j]) / (M ** 0.5)
+        attention_weights = F.softmax(temp, dim=1)
+        out[i] = torch.matmul(attention_weights[i], value)
+
+    # # 下面是不用循环的做法
+    # scaled_dot_product = torch.mm(query, key.t()) / (M ** 0.5)
+    # attention_weights = F.softmax(scaled_dot_product, dim=1)
+    # out = torch.mm(attention_weights, value)
     ##############################################################################
     #               END OF YOUR CODE                                             #
     ##############################################################################
@@ -141,7 +160,7 @@ def scaled_dot_product_two_loop_batch(
     description in TODO for implementation.
 
     args:
-        query: a Tensor of shape (N,K, M) where N is the batch size, K is the
+        query: a Tensor of shape (N, K, M) where N is the batch size, K is the
             sequence length and  M is the sequence embeding dimension
 
         key: a Tensor of shape (N, K, M) where N is the batch size, K is the
@@ -171,7 +190,12 @@ def scaled_dot_product_two_loop_batch(
     # Hint: look at torch.bmm                                                     #
     ###############################################################################
     # Replace "pass" statement with your code
-    pass
+    temp = torch.zeros((N, K, K), dtype=key.dtype, device=key.device)
+    for n in range(N):
+        for i in range(K):
+            temp[n, i] = torch.matmul(key[n], query[n, i]) / (M ** 0.5)
+    attention_weights = F.softmax(temp, dim=2)
+    out = torch.bmm(attention_weights, value)    
     ##############################################################################
     #               END OF YOUR CODE                                             #
     ##############################################################################
@@ -189,7 +213,7 @@ def scaled_dot_product_no_loop_batch(
     multiplication to find the final output.
 
     args:
-        query: a Tensor of shape (N,K, M) where N is the batch size, K is the
+        query: a Tensor of shape (N, K, M) where N is the batch size, K is the
             sequence length and M is the sequence embeding dimension
 
         key:  a Tensor of shape (N, K, M) where N is the batch size, K is the
@@ -220,22 +244,23 @@ def scaled_dot_product_no_loop_batch(
     # Implement this function using no loops.                                     #
     # For the mask part, you can ignore it for now and revisit it in the later part.
     # Given the shape of the mask is (N, K, K), and it is boolean with True values#
-    # indicating  the weights that have to be masked and False values indicating  #
+    # indicating the weights that have to be masked and False values indicating   #
     # the weghts that dont need to be masked at that position. These masked-scaled#
     # weights can then be softmaxed to compute the final weighted sum of values   #
     # Hint: look at torch.bmm and torch.masked_fill                               #
     ###############################################################################
     # Replace "pass" statement with your code
-    pass
+    scaled_dot_product = torch.bmm(query, key.permute(0, 2, 1)) / (M ** 0.5) # (N, K, K)
+    weights_softmax = F.softmax(scaled_dot_product, dim=2)   
     if mask is not None:
         ##########################################################################
         # TODO: Apply the mask to the weight matrix by assigning -1e9 to the     #
         # positions where the mask value is True, otherwise keep it as it is.    #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        weights_softmax = torch.masked_fill(weights_softmax, mask, -1e9)
     # Replace "pass" statement with your code
-    pass
+    y = torch.bmm(weights_softmax, value) 
     ##############################################################################
     #               END OF YOUR CODE                                             #
     ##############################################################################
@@ -276,7 +301,17 @@ class SelfAttention(nn.Module):
         # as given above. self.q, self.k, and self.v respectively.               #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        self.q = nn.Linear(dim_in, dim_q)
+        self.k = nn.Linear(dim_in, dim_q)
+        self.v = nn.Linear(dim_q, dim_v)
+        c_q = (6 / (dim_in + dim_q)) ** 0.5
+        c_v = (6 / (dim_q + dim_v)) ** 0.5
+        nn.init.uniform_(self.q.weight.data, -c_q, c_q)
+        nn.init.zeros_(self.q.bias.data)
+        nn.init.uniform_(self.k.weight.data, -c_q, c_q)
+        nn.init.zeros_(self.k.bias.data)
+        nn.init.uniform_(self.v.weight.data, -c_v, c_v)
+        nn.init.zeros_(self.v.bias.data)
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -303,7 +338,7 @@ class SelfAttention(nn.Module):
         ##########################################################################
         # TODO: Use the functions initialized in the init fucntion to find the   #
         # output tensors. Precisely, pass the inputs query, key and value to the #
-        #  three functions iniitalized above. Then, pass these three transformed #
+        #  three functions initialized above. Then, pass these three transformed #
         # query,  key and value tensors to the self_attention_no_loop_batch to   #
         # get the final output. For now, dont worry about the mask and just      #
         # pass it as a variable in self_attention_no_loop_batch. Assign the value#
@@ -311,7 +346,8 @@ class SelfAttention(nn.Module):
         # variable self.weights_softmax                                          #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        Q, K, V = self.q(query), self.k(key), self.v(value)
+        y, self.weights_softmax = scaled_dot_product_no_loop_batch(Q, K, V)
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
