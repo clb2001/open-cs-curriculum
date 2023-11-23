@@ -59,7 +59,9 @@ def gram_matrix(features, normalize=True):
     ##############################################################################
     # Replace "pass" statement with your code
     N, C, H, W = features.shape
-    gram = torch.zeros((N ,C, C), dtype=features.dtype, device=features.device)
+    features_ = features.clone().view(N, C, H * W)
+    features__ = features_.permute(0, 2, 1)
+    gram = torch.bmm(features_, features__)
     if normalize:
       gram /= (H * W * C)
     ##############################################################################
@@ -93,7 +95,15 @@ def style_loss(feats, style_layers, style_targets, style_weights):
     # You will need to use your gram_matrix function.                            #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    # feats: 13, feats[0].shape: (1, 64, 95, 127)
+    # style_layers: 4, ...[0].shape: (1)
+    # style_targets: 4, ...[0].shape: (1, 64, 64)
+    # style_weights: 4, ...[0].shape: (1)
+    N, C, _, _ = feats[0].shape
+    res = torch.zeros((N, C, C), dtype=style_targets[0].dtype, device=style_targets[0].device)
+    for i, style_layer in enumerate(style_layers):
+      res += style_weights[i] * torch.sum((gram_matrix(feats[style_layer])-style_targets[i])**2)
+    return torch.mean(res) # 试了很久发现mean才能通过测试
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -116,7 +126,9 @@ def tv_loss(img, tv_weight):
     # Your implementation should be vectorized and not require any loops!        #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    dh = img[:, :, 1:, :] - img[:, :, :-1, :]
+    dw = img[:, :, :, 1:] - img[:, :, :, :-1]
+    return tv_weight * (torch.sum(dh**2) + torch.sum(dw**2))
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
