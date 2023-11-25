@@ -245,22 +245,22 @@ def scaled_dot_product_no_loop_batch(
     # For the mask part, you can ignore it for now and revisit it in the later part.
     # Given the shape of the mask is (N, K, K), and it is boolean with True values#
     # indicating the weights that have to be masked and False values indicating   #
-    # the weghts that dont need to be masked at that position. These masked-scaled#
+    # the weights that dont need to be masked at that position. These masked-scaled#
     # weights can then be softmaxed to compute the final weighted sum of values   #
     # Hint: look at torch.bmm and torch.masked_fill                               #
     ###############################################################################
     # Replace "pass" statement with your code
     scaled_dot_product = torch.bmm(query, key.permute(0, 2, 1)) / (M ** 0.5) # (N, K, K)
-    weights_softmax = F.softmax(scaled_dot_product, dim=2)   
     if mask is not None:
         ##########################################################################
         # TODO: Apply the mask to the weight matrix by assigning -1e9 to the     #
         # positions where the mask value is True, otherwise keep it as it is.    #
         ##########################################################################
         # Replace "pass" statement with your code
-        weights_softmax = torch.masked_fill(weights_softmax, mask, -1e9)
+        scaled_dot_product = torch.masked_fill(scaled_dot_product, mask, -1e9)
     # Replace "pass" statement with your code
-    y = torch.bmm(weights_softmax, value) 
+    weights_softmax = F.softmax(scaled_dot_product, dim=-1)
+    y = torch.bmm(weights_softmax, value)
     ##############################################################################
     #               END OF YOUR CODE                                             #
     ##############################################################################
@@ -278,7 +278,7 @@ class SelfAttention(nn.Module):
         
         args:
             dim_in: an int value for input sequence embedding dimension
-            dim_q: an int value for output dimension of query and ley vector
+            dim_q: an int value for output dimension of query and key vector
             dim_v: an int value for output dimension for value vectors
 
         """
@@ -303,14 +303,13 @@ class SelfAttention(nn.Module):
         # Replace "pass" statement with your code
         self.q = nn.Linear(dim_in, dim_q)
         self.k = nn.Linear(dim_in, dim_q)
-        self.v = nn.Linear(dim_q, dim_v)
-        c_q = (6 / (dim_in + dim_q)) ** 0.5
-        c_v = (6 / (dim_q + dim_v)) ** 0.5
-        nn.init.uniform_(self.q.weight.data, -c_q, c_q)
+        self.v = nn.Linear(dim_in, dim_v) # 这里要注意不是dim_q
+        c = (6 / (dim_in + dim_q)) ** 0.5
+        nn.init.uniform_(self.q.weight.data, -c, c)
         nn.init.zeros_(self.q.bias.data)
-        nn.init.uniform_(self.k.weight.data, -c_q, c_q)
+        nn.init.uniform_(self.k.weight.data, -c, c)
         nn.init.zeros_(self.k.bias.data)
-        nn.init.uniform_(self.v.weight.data, -c_v, c_v)
+        nn.init.uniform_(self.v.weight.data, -c, c)
         nn.init.zeros_(self.v.bias.data)
         ##########################################################################
         #               END OF YOUR CODE                                         #
@@ -347,7 +346,7 @@ class SelfAttention(nn.Module):
         ##########################################################################
         # Replace "pass" statement with your code
         Q, K, V = self.q(query), self.k(key), self.v(value)
-        y, self.weights_softmax = scaled_dot_product_no_loop_batch(Q, K, V)
+        y, self.weights_softmax = scaled_dot_product_no_loop_batch(Q, K, V, mask)
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -398,7 +397,16 @@ class MultiHeadAttention(nn.Module):
         # SelfAttention.                                                         #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        self.heads = nn.ModuleList([
+            SelfAttention(dim_in, dim_out, dim_out) for _ in range(num_heads)
+        ])
+        self.linear_attn = nn.Linear(num_heads * dim_out, dim_in)
+        c = (6 / (num_heads * dim_out + dim_in)) ** 0.5
+        nn.init.uniform_(self.linear_attn.weight.data, -c, c)
+        nn.init.zeros_(self.linear_attn.bias.data) 
+        
+        # 一种更简便的写法
+        # torch.nn.init.xavier_uniform_(self.linear_attn.weight.data)             
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -442,7 +450,11 @@ class MultiHeadAttention(nn.Module):
         # nn.Linear mapping function defined in the initialization step.         #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        # selfAttention的N和multiAttention的N有什么区别？
+        # N = 2, K = 4, M = 4 -> (2, dim_in, dim_out) / (2, 4, 8)
+        # 注意t.forward(...)等价于t(...)
+        head_outputs = [t(query, key, value, mask) for t in self.heads]
+        y = self.linear_attn(torch.cat(head_outputs, dim=-1))
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -479,7 +491,8 @@ class LayerNormalization(nn.Module):
         # shift initializations with nn.Parameter                                #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        self.gamma = nn.Parameter(torch.ones(emb_dim), True)
+        self.beta = nn.Parameter(torch.zeros(emb_dim), True)
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -506,7 +519,9 @@ class LayerNormalization(nn.Module):
         # the standard deviation.                                                #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        mean = x.mean(dim=-1, keepdim=True)
+        std = x.std(dim=-1, unbiased=False, keepdim=True)
+        y = self.gamma * (x - mean) / (std + self.epsilon) + self.beta
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -544,7 +559,14 @@ class FeedForwardBlock(nn.Module):
         # change?                                                                #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        self.l1 = nn.Linear(inp_dim, hidden_dim_feedforward)
+        self.l2 = nn.ReLU()
+        self.l3 = nn.Linear(hidden_dim_feedforward, inp_dim)
+        c = (6 / (inp_dim + hidden_dim_feedforward)) ** 0.5
+        nn.init.uniform_(self.l1.weight.data, -c, c)
+        nn.init.zeros_(self.l1.bias.data) 
+        nn.init.uniform_(self.l3.weight.data, -c, c)
+        nn.init.zeros_(self.l3.bias.data)       
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -566,7 +588,7 @@ class FeedForwardBlock(nn.Module):
         # no activation after the second MLP                                      #
         ###########################################################################
         # Replace "pass" statement with your code
-        pass
+        y = self.l3(self.l2(self.l1(x)))
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -614,7 +636,7 @@ class EncoderBlock(nn.Module):
 
             dropout: float value specifying the dropout value
 
-
+        这里多头注意力层必须命名为MultiHeadBlock
         """
 
         if emb_dim % num_heads != 0:
@@ -641,7 +663,10 @@ class EncoderBlock(nn.Module):
         # 4. A Dropout layer with given dropout parameter                        #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        self.MultiHeadBlock = MultiHeadAttention(num_heads, emb_dim, emb_dim // num_heads)
+        self.normalization_layer = LayerNormalization(emb_dim)
+        self.feedforard_block = FeedForwardBlock(emb_dim, feedforward_dim)
+        self.dropout_layer = nn.Dropout(dropout)
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -663,10 +688,15 @@ class EncoderBlock(nn.Module):
         # forward pass. As Multihead Attention takes in 3 inputs, use the same   #
         # input thrice as the input. Follow the Figure 1 in Attention is All you #
         # Need paper to complete the rest of the forward pass. You can also take #
-        # reference from the architecture written in the fucntion documentation. #
+        # reference from the architecture written in the function documentation. #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        # inp - multi_head_attention - out1 - layer_norm(out1 + inp) - dropout - out2 \ 
+        #     - feedforward - out3 - layer_norm(out3 + out2) - dropout - out 
+        out1 = self.MultiHeadBlock(x, x, x)
+        out2 = self.dropout_layer(self.normalization_layer(out1 + x))
+        out3 = self.feedforard_block(out2)
+        y = self.dropout_layer(self.normalization_layer(out2 + out3))      
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -699,7 +729,11 @@ def get_subsequent_mask(seq):
     #                                                                             #
     ###############################################################################
     # Replace "pass" statement with your code
-    pass
+    N, K = seq.shape
+    mask = torch.ones((N, K, K), dtype=torch.bool, device=seq.device)
+    for i in range(N):
+        for j in range(K):
+            mask[i, j, :j+1] = False
     ##############################################################################
     #               END OF YOUR CODE                                             #
     ##############################################################################
@@ -722,7 +756,7 @@ class DecoderBlock(nn.Module):
         The function implements the DecoderBlock for the Transformer model. In the 
         class we learned about encoder only model that can be used for tasks like 
         sequence classification but for more complicated tasks like sequence to 
-        sequence we need a decoder network that can transformt the output of the 
+        sequence we need a decoder network that can transform the output of the 
         encoder to a target sequence. This kind of architecture is important in 
         tasks like language translation where we have a sequence as input and a 
         sequence as output. 
@@ -772,7 +806,6 @@ class DecoderBlock(nn.Module):
         self.norm2 = None
         self.norm3 = None
         self.dropout = None
-        self.feed_forward = None
         ##########################################################################
         # TODO: Initialize the following layers:                                 #
         # 1. Two MultiheadAttention layers with num_heads number of heads, emb_dim
@@ -783,9 +816,14 @@ class DecoderBlock(nn.Module):
         # 3. LayerNormalization layers after each of the block                   #
         # 4. Dropout after each of the block                                     #
         ##########################################################################
-
         # Replace "pass" statement with your code
-        pass
+        self.attention_self = MultiHeadAttention(num_heads, emb_dim, emb_dim // num_heads)
+        self.attention_cross = MultiHeadAttention(num_heads, emb_dim, emb_dim // num_heads)
+        self.feed_forward = FeedForwardBlock(emb_dim, feedforward_dim)
+        self.norm1 = LayerNormalization(emb_dim)
+        self.norm2 = LayerNormalization(emb_dim)
+        self.norm3 = LayerNormalization(emb_dim)
+        self.dropout = nn.Dropout(dropout)
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -815,7 +853,27 @@ class DecoderBlock(nn.Module):
         # pass. Don't forget to apply the residual connections for different layers.
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        # inp - masked_multi_head_attention - out1 - layer_norm(inp + out1) - \
+        # dropout - (out2 and enc_out) -  multi_head_attention - out3 - \
+        # layer_norm(out3 + out2) - dropout - out4 - feed_forward - out5 - \
+        # layer_norm(out5 + out4) - dropout - out
+        # 不知道这个实现哪里有问题
+        N, K, M = dec_inp.shape
+        mask = get_subsequent_mask(dec_inp[:, :, 0])
+        out1 = self.attention_self(dec_inp, dec_inp, dec_inp, mask)
+        out2 = self.dropout(self.norm1(dec_inp + out1))
+        out3 = self.attention_cross(out2, enc_inp, enc_inp)
+        out4 = self.dropout(self.norm2(out3 + out2))
+        out5 = self.feed_forward(out4)
+        y = self.dropout(self.norm3(out5 + out4))
+        
+        # mask = get_subsequent_mask(dec_inp[:, :, 0])
+        # out1 = self.attention_self(dec_inp, dec_inp, dec_inp, mask)
+        # out2 = self.norm1(self.dropout(out1) + dec_inp)
+        # out3 = self.attention_cross(out2, enc_inp, enc_inp)
+        # out4 = self.norm2(self.dropout(out3) + out2)
+        # out5 = self.feed_forward(out4)
+        # y = self.norm3(self.dropout(out5) + out4)
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -929,7 +987,7 @@ def position_encoding_simple(K: int, M: int) -> Tensor:
     # times to create a tensor of the required output shape                      #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    y = torch.linspace(0, 1 - 1 / K, steps=K).view(-1, 1).expand(1, K, M)
     ##############################################################################
     #               END OF YOUR CODE                                             #
     ##############################################################################
@@ -957,7 +1015,22 @@ def position_encoding_sinusoid(K: int, M: int) -> Tensor:
     # alternating sines and cosines along the embedding dimension M.             #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    # 原来算法：
+    # y = torch.zeros((1, K, M))
+    # for k in range(K):
+    #     for m in range(M):
+    #         if m % 2 == 0:
+    #             y[0, k, m] = torch.sin(torch.tensor(k/10000**(m//M)))
+    #         else:
+    #             y[0, k, m] = torch.cos(torch.tensor(k/10000**((m-1)//M)))
+    # 改进后的算法：
+    k = torch.arange(K).view(-1, 1)
+    m = torch.arange(M).view(1, -1)
+    # 有个问题，m // M始终是0，这样算m // M有什么意义？
+    angles = k / 10000 ** (m // M)
+    y = torch.zeros((1, K, M))
+    y[0, :, 0::2] = torch.sin(angles[:, 0::2])
+    y[0, :, 1::2] = torch.cos(angles[:, 1::2])
     ##############################################################################
     #               END OF YOUR CODE                                             #
     ##############################################################################
@@ -1007,7 +1080,7 @@ class Transformer(nn.Module):
         # name of this layer as self.emb_layer                                   #
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        self.emb_layer = nn.Embedding(vocab_len, emb_dim)
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -1040,7 +1113,9 @@ class Transformer(nn.Module):
                 of arithmetic expression
             ans_pos: Tensor of shape (N, K, M) that consists of positonal
                 encodings of the target sequence
-
+            N is the number of sequences in the batch, 
+            K is the sequence length
+            M is the input embedding dimension.
         returns:
             dec_out: Tensor of shape (N*O, M) where O is the size of
                 the target sequence.
@@ -1061,7 +1136,10 @@ class Transformer(nn.Module):
         # Hint: the mask shape will depend on the Tensor ans_b
         ##########################################################################
         # Replace "pass" statement with your code
-        pass
+        enp_out = self.encoder(q_emb_inp)       
+        mask = get_subsequent_mask(ans_b[:, :-1])
+        N, O, _ = mask.shape
+        dec_out = self.decoder(a_emb_inp, enp_out, mask).view(N * O, -1)
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################
@@ -1106,7 +1184,7 @@ class AddSubDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         """
-        The core fucntion to get element with index idx in the data.
+        The core function to get element with index idx in the data.
         args:
             idx: index of the element that we need to extract from the data
         returns:
