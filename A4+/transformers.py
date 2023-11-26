@@ -304,12 +304,14 @@ class SelfAttention(nn.Module):
         self.q = nn.Linear(dim_in, dim_q)
         self.k = nn.Linear(dim_in, dim_q)
         self.v = nn.Linear(dim_in, dim_v) # 这里要注意不是dim_q
-        c = (6 / (dim_in + dim_q)) ** 0.5
-        nn.init.uniform_(self.q.weight.data, -c, c)
+        c_q = (6 / (dim_in + dim_q)) ** 0.5
+        c_k = (6 / (dim_in + dim_q)) ** 0.5
+        c_v = (6 / (dim_in + dim_v)) ** 0.5
+        nn.init.uniform_(self.q.weight.data, -c_q, c_q)
         nn.init.zeros_(self.q.bias.data)
-        nn.init.uniform_(self.k.weight.data, -c, c)
+        nn.init.uniform_(self.k.weight.data, -c_k, c_k)
         nn.init.zeros_(self.k.bias.data)
-        nn.init.uniform_(self.v.weight.data, -c, c)
+        nn.init.uniform_(self.v.weight.data, -c_v, c_v)
         nn.init.zeros_(self.v.bias.data)
         ##########################################################################
         #               END OF YOUR CODE                                         #
@@ -453,7 +455,10 @@ class MultiHeadAttention(nn.Module):
         # selfAttention的N和multiAttention的N有什么区别？
         # N = 2, K = 4, M = 4 -> (2, dim_in, dim_out) / (2, 4, 8)
         # 注意t.forward(...)等价于t(...)
-        head_outputs = [t(query, key, value, mask) for t in self.heads]
+        # head_outputs = [t(query, key, value, mask) for t in self.heads]
+        head_outputs = list()
+        for i, t in enumerate(self.heads):
+            head_outputs.append(t(query, key, value, mask))
         y = self.linear_attn(torch.cat(head_outputs, dim=-1))
         ##########################################################################
         #               END OF YOUR CODE                                         #
@@ -617,7 +622,7 @@ class EncoderBlock(nn.Module):
         
         The architecture is as follows:
         
-       inp - multi_head_attention - out1 - layer_norm(out1 + inp) - dropout - out2 \ 
+        inp - multi_head_attention - out1 - layer_norm(out1 + inp) - dropout - out2 \ 
         - feedforward - out3 - layer_norm(out3 + out2) - dropout - out
         
         Here, inp is input of the MultiHead Attention of shape (N, K, M), out1, 
@@ -710,10 +715,10 @@ def get_subsequent_mask(seq):
     (N, K) where N is the batch size and K is the sequence length.
 
     args:
-        seq: a tensor of shape (N, K) where N is the batch sieze and K is the
+        seq: a tensor of shape (N, K) where N is the batch size and K is the
              length of the sequence
     return:
-        mask: a tensor of shape (N, K, K) where N is the batch sieze and K is the
+        mask: a tensor of shape (N, K, K) where N is the batch size and K is the
               length of the sequence
 
     Given a sequence of length K, we want to mask the weights inside the function
@@ -729,11 +734,15 @@ def get_subsequent_mask(seq):
     #                                                                             #
     ###############################################################################
     # Replace "pass" statement with your code
+    # 上三角全为true
     N, K = seq.shape
     mask = torch.ones((N, K, K), dtype=torch.bool, device=seq.device)
     for i in range(N):
         for j in range(K):
             mask[i, j, :j+1] = False
+    # mask = torch.ones((N, K, K), dtype=torch.bool, device=seq.device) 
+    # triangular_mask = torch.triu(torch.zeros((K, K), dtype=torch.bool, device=seq.device))
+    # mask[:, :, :K] = triangular_mask
     ##############################################################################
     #               END OF YOUR CODE                                             #
     ##############################################################################
@@ -857,23 +866,17 @@ class DecoderBlock(nn.Module):
         # dropout - (out2 and enc_out) -  multi_head_attention - out3 - \
         # layer_norm(out3 + out2) - dropout - out4 - feed_forward - out5 - \
         # layer_norm(out5 + out4) - dropout - out
-        # 不知道这个实现哪里有问题
-        N, K, M = dec_inp.shape
-        mask = get_subsequent_mask(dec_inp[:, :, 0])
+        # 不知道这个实现哪里有问题，检查了一天了
+        # 不论有没有加入mask，dec_inp+out1 normalize后的结果都一样
+        # N, K, M = dec_inp.shape
+        if mask != None:
+            mask = get_subsequent_mask(dec_inp[:, :, 0])
         out1 = self.attention_self(dec_inp, dec_inp, dec_inp, mask)
         out2 = self.dropout(self.norm1(dec_inp + out1))
         out3 = self.attention_cross(out2, enc_inp, enc_inp)
         out4 = self.dropout(self.norm2(out3 + out2))
         out5 = self.feed_forward(out4)
         y = self.dropout(self.norm3(out5 + out4))
-        
-        # mask = get_subsequent_mask(dec_inp[:, :, 0])
-        # out1 = self.attention_self(dec_inp, dec_inp, dec_inp, mask)
-        # out2 = self.norm1(self.dropout(out1) + dec_inp)
-        # out3 = self.attention_cross(out2, enc_inp, enc_inp)
-        # out4 = self.norm2(self.dropout(out3) + out2)
-        # out5 = self.feed_forward(out4)
-        # y = self.norm3(self.dropout(out5) + out4)
         ##########################################################################
         #               END OF YOUR CODE                                         #
         ##########################################################################

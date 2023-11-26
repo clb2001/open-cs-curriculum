@@ -5,3 +5,6 @@
 *coco.pt
 *imagenet_val_25.npz
 *style-transfer-checks.npz
+*VOCtrainval_06-Nov-2007.tar
+*/train
+*/val
