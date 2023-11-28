@@ -1,6 +1,12 @@
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn, optim
+import random
+
+def reset_seed(number):
+    random.seed(number)
+    torch.manual_seed(number)
+    return
 
 def rel_error(x, y, eps=1e-10):
     top = (x - y).abs().max().item()
@@ -154,7 +160,8 @@ class DecoderBlock(nn.Module):
         y = self.dropout(self.norm3(out5 + out4))
         return y
 
-mode = "encode"
+reset_seed(0)
+mode = "decode"
 
 if mode == "encode":
     N = 2

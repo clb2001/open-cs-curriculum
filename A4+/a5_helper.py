@@ -252,17 +252,16 @@ def inference(model, inp_exp, inp_exp_pos, out_pos_exp, out_seq_len):
     ques_emb = model.emb_layer(inp_exp)
     q_emb_inp = ques_emb + inp_exp_pos
     enc_out = model.encoder(q_emb_inp)
-    for i in range(2):
-    # for i in range(out_seq_len - 1):
+    for i in range(out_seq_len - 1):
         ans_emb = model.emb_layer(y_init)
         a_emb_inp = ans_emb + out_pos_exp[:, : y_init.shape[1], :]
-        print(ans_emb.shape, out_pos_exp[:, : y_init.shape[1], :].shape, y_init.shape[1])
+        # print(ans_emb.shape, out_pos_exp[:, : y_init.shape[1], :].shape, y_init.shape[1])
         dec_out = model.decoder(a_emb_inp, enc_out, None)
-        print( dec_out[0, y_init.shape[1] - 1 : y_init.shape[1]])
+        print(dec_out[0, y_init.shape[1] - 1 : y_init.shape[1]])
         _, next_word = torch.max(
             dec_out[0, y_init.shape[1] - 1 : y_init.shape[1]], dim=1
         )
-        print(_, next_word)
+        # print(_, next_word)
         y_init = torch.cat([y_init, next_word.view(1, 1)], dim=1)
     return y_init, model
 

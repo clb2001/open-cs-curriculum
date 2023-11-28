@@ -855,7 +855,7 @@ class DecoderBlock(nn.Module):
         # forward pass of the decoder block. Pass the dec_inp to the             #
         # self.attention_self layer. This layer is responsible for the self      #
         # interation of the decoder input. You should follow the Figure 1 in     #
-        # Attention is All you need paper to implenment the rest of the forward  #
+        # Attention is All you need paper to implement the rest of the forward  #
         # pass. Don't forget to apply the residual connections for different layers.
         ##########################################################################
         # Replace "pass" statement with your code
@@ -863,13 +863,11 @@ class DecoderBlock(nn.Module):
         # dropout - (out2 and enc_out) -  multi_head_attention - out3 - \
         # layer_norm(out3 + out2) - dropout - out4 - feed_forward - out5 - \
         # layer_norm(out5 + out4) - dropout - out
-        # 不知道这个实现哪里有问题，检查了一天了
+        # 不知道这个实现哪里有问题，检查了好几天
         # 不论有没有加入mask，dec_inp+out1 normalize后的结果都一样
         # N, K, M = dec_inp.shape
-        if mask == None:
-            mask = get_subsequent_mask(dec_inp[:, :, 0])
         out1 = self.attention_self(dec_inp, dec_inp, dec_inp, mask)
-        out2 = self.dropout(self.norm1(dec_inp + out1))
+        out2 = self.dropout(self.norm1(out1 + dec_inp))
         out3 = self.attention_cross(out2, enc_inp, enc_inp)
         out4 = self.dropout(self.norm2(out3 + out2))
         out5 = self.feed_forward(out4)
