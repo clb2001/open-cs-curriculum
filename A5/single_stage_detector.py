@@ -38,7 +38,27 @@ def GenerateAnchor(anc, grid):
   # generate all the anchor coordinates for each image. Support batch input.   #
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
+  # 要理解anchor，proposal等概念
+  # 这些在暑假实习一开始就有接触过，后来逐渐忘记了
+  # 看了一遍视频，确实好理解了许多
+  # B, H_, W_, _ = grid.shape
+  # A, _ = anc.shape
+  # anchors = torch.zeros((B, A, H_, W_, 4), dtype=anc.dtype, device=anc.device)
+  # for b in range(B):
+  #   for a in range(A):
+  #     for h in range(H_):
+  #       for w in range(W_):
+  #         anchors[b, a, h, w, :] = torch.tensor([grid[b, h, w, 0] - anc[a, 0] / 2, grid[b, h, w, 1] - anc[a, 1] / 2, 
+  #           grid[b, h, w, 0] + anc[a, 0] / 2, grid[b, h, w, 1] + anc[a, 1] / 2])
+  B, H_, W_, _ = grid.shape
+  A, _ = anc.shape  
+  anc = anc.view(1, A, 1, 1, 2)
+  grid = grid.view(B, 1, H_, W_, 2)
+  x_tl = grid[..., 0] - anc[..., 0] / 2
+  y_tl = grid[..., 1] - anc[..., 1] / 2
+  x_br = grid[..., 0] + anc[..., 0] / 2
+  y_br = grid[..., 1] + anc[..., 1] / 2
+  anchors = torch.stack([x_tl, y_tl, x_br, y_br], dim=-1)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -74,7 +94,22 @@ def GenerateProposal(anchors, offsets, method='YOLO'):
   # compute the proposal coordinates using the transformation formulas above.  #
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
+  if method == 'YOLO':
+    x = (anchors[..., 0] + anchors[..., 2]) / 2 + offsets[..., 0]
+    y = (anchors[..., 1] + anchors[..., 3]) / 2 + offsets[..., 1]
+    w = (anchors[..., 2] - anchors[..., 0]) * torch.exp(offsets[..., 2])
+    h = (anchors[..., 3] - anchors[..., 1]) * torch.exp(offsets[..., 3])
+  if method == 'FasterRCNN':
+    x = (anchors[..., 0] + anchors[..., 2]) / 2 + offsets[..., 0] * (anchors[..., 2] - anchors[..., 0])
+    y = (anchors[..., 1] + anchors[..., 3]) / 2 + offsets[..., 1] * (anchors[..., 3] - anchors[..., 1])
+    w = (anchors[..., 2] - anchors[..., 0]) * torch.exp(offsets[..., 2])
+    h = (anchors[..., 3] - anchors[..., 1]) * torch.exp(offsets[..., 3])
+  tmp = torch.stack([x, y, w, h], dim=-1)
+  x_tl = tmp[..., 0] - tmp[..., 2] / 2
+  y_tl = tmp[..., 1] - tmp[..., 3] / 2
+  x_br = tmp[..., 0] + tmp[..., 2] / 2
+  y_br = tmp[..., 1] + tmp[..., 3] / 2   
+  proposals = torch.stack([x_tl, y_tl, x_br, y_br], dim=-1)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -115,7 +150,7 @@ def IoU(proposals, bboxes):
   # bottom-right corner of proposal and bbox. Think about their relationships. #
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
+  
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
