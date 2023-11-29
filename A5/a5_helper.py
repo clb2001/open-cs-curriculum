@@ -217,7 +217,7 @@ def ReferenceOnActivatedAnchors(anchors, bboxes, grid, iou_mat, pos_thresh=0.7, 
   For YOLO - A grid cell is responsible for predicting a GT box if the center of
   the box falls into that cell.
   Implementation details: First compute manhattan distance between grid cell centers
-  (BxH’xW’) and GT box centers (BxN). This gives us a matrix of shape Bx(H'xW')xN and
+  (BxH'xW') and GT box centers (BxN). This gives us a matrix of shape Bx(H'xW')xN and
   perform torch.min(dim=1)[1] on it gives us the indexes indicating activated grids
   responsible for GT boxes (convert to x and y). Among all the anchors associated with
   the activate grids, the anchor with the largest IoU with the GT box is responsible to
@@ -239,11 +239,11 @@ def ReferenceOnActivatedAnchors(anchors, bboxes, grid, iou_mat, pos_thresh=0.7, 
   iii) Compute GT confidence score on the negative proposals.
   
   Inputs:
-  - anchors: Anchor boxes, of shape BxAxH’xW’x4
+  - anchors: Anchor boxes, of shape BxAxH'xW'x4
   - bboxes: GT boxes of shape BxNx5, where N is the number of PADDED GT boxes,
             5 indicates (x_{lr}^{gt}, y_{lr}^{gt}, x_{rb}^{gt}, y_{rb}^{gt}) and class index
   - grid (float): A cell grid of shape BxH'xW'x2 where 2 indicate the (x, y) coord
-  - iou_mat: IoU matrix of shape Bx(AxH’xW’)xN
+  - iou_mat: IoU matrix of shape Bx(AxH'xW')xN
   - pos_thresh: Positive threshold value
   - neg_thresh: Negative threshold value
   - method: Switch between 'YOLO' mode and 'FasterRCNN' mode
@@ -267,13 +267,17 @@ def ReferenceOnActivatedAnchors(anchors, bboxes, grid, iou_mat, pos_thresh=0.7, 
   N = bboxes.shape[1]
 
   # activated/positive anchors
+  # 这些框架代码也要研读，否则后面根本写不下去
+  # 在做这些实验的时候，最忌讳的不是不会实现，而是对整体的框架没有全局的理解
+  # - iou_mat: IoU matrix of shape (B, A*H'*W', N) where iou_mat[b, i, n] gives
+  #   the IoU between one element of proposals[b] and bboxes[b, n].
   max_iou_per_anc, max_iou_per_anc_ind = iou_mat.max(dim=-1)
   if method == 'FasterRCNN':
     max_iou_per_box = iou_mat.max(dim=1, keepdim=True)[0]
     activated_anc_mask = (iou_mat == max_iou_per_box) & (max_iou_per_box > 0)
     activated_anc_mask |= (iou_mat > pos_thresh) # using the pos_thresh condition as well
     # if an anchor matches multiple GT boxes, choose the box with the largest iou
-    activated_anc_mask = activated_anc_mask.max(dim=-1)[0] # Bx(AxH’xW’)
+    activated_anc_mask = activated_anc_mask.max(dim=-1)[0] # Bx(AxH'xW')
     activated_anc_ind = torch.nonzero(activated_anc_mask.view(-1)).squeeze(-1)
 
     # GT conf scores
@@ -297,8 +301,8 @@ def ReferenceOnActivatedAnchors(anchors, bboxes, grid, iou_mat, pos_thresh=0.7, 
     grid_mask = (mah_dist == min_mah_dist).unsqueeze(1) # Bx1x(H'xW')xN
 
     reshaped_iou_mat = iou_mat.view(B, A, -1, N)
-    anc_with_largest_iou = reshaped_iou_mat.max(dim=1, keepdim=True)[0] # Bx1x(H’xW’)xN
-    anc_mask = (anc_with_largest_iou == reshaped_iou_mat) # BxAx(H’xW’)xN
+    anc_with_largest_iou = reshaped_iou_mat.max(dim=1, keepdim=True)[0] # Bx1x(H'xW')xN
+    anc_mask = (anc_with_largest_iou == reshaped_iou_mat) # BxAx(H'xW')xN
     activated_anc_mask = (grid_mask & anc_mask).view(B, -1, N)
     activated_anc_mask &= bbox_mask.unsqueeze(1)
     
@@ -332,7 +336,7 @@ def ReferenceOnActivatedAnchors(anchors, bboxes, grid, iou_mat, pos_thresh=0.7, 
   GT_offsets = torch.cat((xy_offsets, wh_offsets), dim=-1)
 
   # negative anchors
-  negative_anc_mask = (max_iou_per_anc < neg_thresh) # Bx(AxH’xW’)
+  negative_anc_mask = (max_iou_per_anc < neg_thresh) # Bx(AxH'xW')
   negative_anc_ind = torch.nonzero(negative_anc_mask.view(-1)).squeeze(-1)
   negative_anc_ind = negative_anc_ind[torch.randint(0, negative_anc_ind.shape[0], (activated_anc_ind.shape[0],))]
   negative_anc_coord = anchors.view(-1, 4)[negative_anc_ind.view(-1)]

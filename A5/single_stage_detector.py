@@ -133,7 +133,7 @@ def IoU(proposals, bboxes):
     the IoU between one element of proposals[b] and bboxes[b, n].
 
   For this implementation you DO NOT need to filter invalid proposals or boxes;
-  in particular you don't need any special handling for bboxxes that are padded
+  in particular you don't need any special handling for bboxes that are padded
   with -1.
   """
   iou_mat = None
@@ -150,7 +150,37 @@ def IoU(proposals, bboxes):
   # bottom-right corner of proposal and bbox. Think about their relationships. #
   ##############################################################################
   # Replace "pass" statement with your code
-  
+  # 首先要理解这些参数的定义
+  # (B, A, H', W', 4)--B代表一个batch中有多少images, 
+  # W_代表width of the activation map, number of grids in the horizontal dimension 
+  # H_代表height of the activation map, number of grids in the vertical dimension
+  # A代表anchors的个数
+  # (B, N, 5)--N代表the number of GT boxes(Ground Truth boxes，即真实标记框)
+  # 这个handouts是不是写错了？
+  B, A, H_, W_, _ = proposals.shape
+  _, N, _ = bboxes.shape
+  proposals = proposals.view(B, A * H_ * W_, 1, 4)
+  bboxes = bboxes.view(B, 1, N, 5)
+  proposals_x_tl = proposals[..., 0]
+  proposals_y_tl = proposals[..., 1]
+  proposals_x_br = proposals[..., 2]
+  proposals_y_br = proposals[..., 3]
+  bboxes_x_tl = bboxes[..., 0]
+  bboxes_y_tl = bboxes[..., 1]
+  bboxes_x_br = bboxes[..., 2]
+  bboxes_y_br = bboxes[..., 3]
+  proposals_S = (proposals_x_br - proposals_x_tl) * (proposals_y_br - proposals_y_tl)
+  bboxes_S = (bboxes_x_br - bboxes_x_tl) * (bboxes_y_br - bboxes_y_tl)
+  left = torch.max(proposals_x_tl, bboxes_x_tl)
+  right = torch.min(proposals_x_br, bboxes_x_br)
+  top = torch.max(proposals_y_tl, bboxes_y_tl)
+  bottom = torch.min(proposals_y_br, bboxes_y_br)
+  intersection_tmp_1 = torch.clamp(right - left, min=0)
+  intersection_tmp_2 = torch.clamp(bottom - top, min=0)
+  intersection = intersection_tmp_1 * intersection_tmp_2
+  union = proposals_S + bboxes_S - intersection
+  iou_mat =  intersection / union
+  # 写了差不多一个半小时，对iou，tensor的广播运算理解深刻了许多
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -177,7 +207,17 @@ class PredictionNetwork(nn.Module):
     # Make sure to name your prediction network pred_layer.
     self.pred_layer = None
     # Replace "pass" statement with your code
-    pass
+    # 为什么是5×A+C？5表示confidence, X, Y, Width, Height
+    # The confidence represents the Intersection Over Union (IOU) 
+    # between the predicted box and any ground truth box.
+    # Each grid cell also predicts conditional class probabilities, P(Classi|Object). 
+    # (Total number of classes=20)
+    self.pred_layer = nn.Sequential(
+      nn.Conv2d(in_dim, hidden_dim, kernel_size=1),
+      nn.Dropout(drop_ratio),
+      nn.LeakyReLU(),
+      nn.Conv2d(hidden_dim, 5 * self.num_anchors + self.num_classes, kernel_size=1)
+    )
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -194,6 +234,12 @@ class PredictionNetwork(nn.Module):
       of the anchors specified by anchor_idx.
     """
     B, A, D, H, W = anchor_data.shape
+    # 一个张量（tensor）被称为contiguous，意味着它的内存是连续的，即元素在内存中是按照顺序依次存储的。
+    # 这种连续的内存布局可以提高数据访问的效率
+    # 注意这个anchor_idx是怎么取anchor的
+    # anchor返回的又是什么--anchor_idx对应的anchor的位置、大小和iou
+    # 其实逻辑很简单，就是训练一个神经网络，里面包括5*anchors+classes个维度
+    # 一共7*7*(9*5+20)个参数，损失函数是与标注的框吻合程度
     anchor_data = anchor_data.permute(0, 1, 3, 4, 2).contiguous().view(-1, D)
     extracted_anchors = anchor_data[anchor_idx]
     return extracted_anchors
@@ -274,7 +320,28 @@ class PredictionNetwork(nn.Module):
     # negative anchors specified by pos_anchor_idx and neg_anchor_idx.         #
     ############################################################################
     # Replace "pass" statement with your code
-    pass
+    # 这一部分的逻辑我完全不理解
+    # 要试着理解这一部分
+    # M indicates the INDEX of activated anchors
+    # 这五层从前到后分别是: confidence, X, Y, Width, Height
+    # The (x, y) coordinates represent the center of the box relative to the bounds of the grid cell.
+    # The width w and height h are predicted relative to the whole image.
+    # The confidence represents the Intersection Over Union (IOU) between the predicted box and any ground truth box.
+    pred_outputs = self.pred_layer(features) # (B, 5*A+C, 7, 7)
+    B, A, H, W = pred_outputs.shape
+    tmp = pred_outputs[:, :5*self.num_anchors, :, :].view(B, self.num_anchors, -1, H, W) # (B, A, D, H, W)
+    if pos_anchor_idx != None:
+      pos_anchors = self._extract_anchor_data(tmp, pos_anchor_idx)
+      neg_anchors = self._extract_anchor_data(tmp, neg_anchor_idx)
+      conf_scores_tmp = torch.stack([pos_anchors[:, 0], neg_anchors[:, 0]], dim=0).reshape(-1, 1)
+      conf_scores = torch.sigmoid(conf_scores_tmp)
+      offsets = pos_anchors[:, 1:].clone() # (M, D-1)
+      offsets[:, :2] = torch.sigmoid(offsets[:, :2]) - 0.5
+      class_scores = self._extract_class_scores(pred_outputs[:, 5*self.num_anchors: , :, :], pos_anchor_idx)
+    else:
+      conf_scores = torch.sigmoid(tmp[:, :, 0, :, :].squeeze(2))
+      offsets = torch.sigmoid(tmp[:, :, :4, :, :]) - 0.5
+      class_scores = pred_outputs[:, 5*self.num_anchors: , :, :]
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -290,6 +357,7 @@ class SingleStageDetector(nn.Module):
     self.num_classes = 20
     self.pred_network = PredictionNetwork(1280, num_anchors=self.anchor_list.shape[0], \
                                           num_classes=self.num_classes)
+    
   def forward(self, images, bboxes):
     """
     Training-time forward pass for the single-stage detector.
@@ -323,7 +391,20 @@ class SingleStageDetector(nn.Module):
     #       (A5-1) for a better performance than with the default value.         #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    feat = self.feat_extractor(images) # Bx1280x7x7
+    B, _, _, _ = feat.shape
+    grid = GenerateGrid(B) # (B, H', W', 2)
+    self.anchor_list = self.anchor_list.to(grid.device)
+    anchor = GenerateAnchor(self.anchor_list, grid) # (B, A, H', W', 4)
+    iou_mat = IoU(anchor, bboxes) # (B, A*H'*W', N)
+    _, anc_per_img, _ = iou_mat.shape
+    activated_anc_ind, negative_anc_ind, GT_conf_scores, GT_offsets, GT_class, _, _ \
+      = ReferenceOnActivatedAnchors(anchor, bboxes, grid, iou_mat, pos_thresh=0.7, neg_thresh=0.2, method='YOLO') 
+    conf_scores, offsets, class_scores = self.pred_network(feat, activated_anc_ind, negative_anc_ind)
+    conf_loss = ConfScoreRegression(conf_scores, GT_conf_scores)
+    reg_loss = BboxRegression(offsets, GT_offsets)
+    cls_loss = ObjectClassification(class_scores, GT_class, B, anc_per_img, activated_anc_ind)
+    total_loss = w_conf * conf_loss + w_reg * reg_loss + w_cls * cls_loss
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -359,12 +440,29 @@ class SingleStageDetector(nn.Module):
     # lists of B 2-D tensors (you may need to unsqueeze dim=1 for the last two). #
     ##############################################################################
     # Replace "pass" statement with your code
-    pass
+    feat = self.feat_extractor(images) # Bx1280x7x7
+    B, _, _, _ = feat.shape
+    grid = GenerateGrid(B) # (B, H', W', 2)
+    self.anchor_list = self.anchor_list.to(grid.device)
+    anchor = GenerateAnchor(self.anchor_list, grid) # (B, A, H', W', 4)
+    conf_scores, offsets, class_scores = self.pred_network(feat)
+    keep = torchvision.ops.nms()
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
     return final_proposals, final_conf_scores, final_class
 
+def calculate_iou(box, boxes):
+    x_min = torch.max(box[0], boxes[:, 0])
+    y_min = torch.max(box[1], boxes[:, 1])
+    x_max = torch.min(box[2], boxes[:, 2])
+    y_max = torch.min(box[3], boxes[:, 3])
+
+    intersection = torch.clamp(x_max - x_min, min=0) * torch.clamp(y_max - y_min, min=0)
+    union = (box[2] - box[0]) * (box[3] - box[1]) + (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1]) - intersection
+
+    iou = intersection / union
+    return iou
 
 def nms(boxes, scores, iou_threshold=0.5, topk=None):
   """
@@ -399,7 +497,20 @@ def nms(boxes, scores, iou_threshold=0.5, topk=None):
   #   github.com/pytorch/vision/blob/master/torchvision/csrc/cpu/nms_cpu.cpp  #
   #############################################################################
   # Replace "pass" statement with your code
-  pass
+  _, indices = scores.sort(descending=True)
+  boxes = boxes[indices]
+  scores = scores[indices]
+  keep = list()
+  while boxes.numel() > 0:
+    keep.append(indices[0])
+    ious = calculate_iou(boxes[0], boxes[1:])
+    mask = ious <= iou_threshold
+    boxes = boxes[1:][mask]
+    scores = scores[1:][mask]
+    indices = indices[1:][mask]
+    if topk is not None and len(keep) >= topk:
+        break
+  keep = torch.LongTensor(keep)
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
