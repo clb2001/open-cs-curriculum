@@ -440,18 +440,42 @@ class SingleStageDetector(nn.Module):
     # lists of B 2-D tensors (you may need to unsqueeze dim=1 for the last two). #
     ##############################################################################
     # Replace "pass" statement with your code
-    feat = self.feat_extractor(images) # Bx1280x7x7
+    # 这里涉及到的pytorch操作还挺复杂
+    feat = self.feat_extractor(images) # B x 1280 x 7 x 7  
     B, _, _, _ = feat.shape
     grid = GenerateGrid(B) # (B, H', W', 2)
     self.anchor_list = self.anchor_list.to(grid.device)
     anchor = GenerateAnchor(self.anchor_list, grid) # (B, A, H', W', 4)
     conf_scores, offsets, class_scores = self.pred_network(feat)
-    keep = torchvision.ops.nms()
+    # conf_scores: (B, A, H, W)
+    # offsets: (B, A, 4, H, W) -> (B, A, H, W, 4)
+    # class_scores: (B, C, H, W)
+    offsets = offsets.permute(0, 1, 3, 4, 2)
+    proposals = GenerateProposal(anchor, offsets, 'YOLO') # (B, A, H', W', 4)
+    filtered_indices = torch.nonzero(conf_scores > thresh, as_tuple=False) # (N * 4)-->4表示(B, A, H, W)
+    for b in range(B):
+      filtered_indices_tmp = tuple(filtered_indices[filtered_indices[:, 0] == b].T)
+      filtered_proposals = proposals[filtered_indices_tmp]
+      filtered_conf_scores = conf_scores[filtered_indices_tmp]
+      keep = nms(filtered_proposals, filtered_conf_scores, nms_thresh)
+      nms_proposals = filtered_proposals[keep]
+      nms_conf_scores = filtered_conf_scores[keep]
+      # 这个keep，表示筛选出来的filtered_proposals的索引（N行中取索引）
+      # 也就是filtered_indices_tmp中，每个元组的索引
+      # 所以接下来需要做的，就是取后两个元组对应索引的元素，作为H, W的值
+      selected_tensors = (filtered_indices_tmp[2][keep], filtered_indices_tmp[3][keep])
+      nms_class_scores = class_scores[b][:, selected_tensors[0], selected_tensors[1]]
+      final_class_index = torch.argmax(nms_class_scores, dim=0).float()
+      # 唉，坑太多，好难好难，但是搞了三个半小时总算写出来了
+      final_proposals.append(nms_proposals.detach())
+      final_conf_scores.append(nms_conf_scores.unsqueeze(1).detach())
+      final_class.append(final_class_index.unsqueeze(1).detach())
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
     return final_proposals, final_conf_scores, final_class
 
+# 定义的辅助函数
 def calculate_iou(box, boxes):
     x_min = torch.max(box[0], boxes[:, 0])
     y_min = torch.max(box[1], boxes[:, 1])
