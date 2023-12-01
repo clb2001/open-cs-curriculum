@@ -409,6 +409,7 @@ def DetectionSolver(detector, train_loader, learning_rate=3e-3,
       epoch_loss += loss.item() * images.shape[0]
 
       print('(Iter {} / {})'.format(iter_num, len(train_loader)))
+      # torch.cuda.empty_cache()
 
     end_t = time.time()
     epoch_loss = epoch_loss / len(train_loader.dataset)

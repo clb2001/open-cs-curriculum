@@ -87,7 +87,7 @@ def GenerateProposal(anchors, offsets, method='YOLO'):
     proposal proposals[b, a, h, w].
   
   """
-  assert(method in ['YOLO', 'FasterRCNN'])
+  assert (method in ['YOLO', 'FasterRCNN'])
   proposals = None
   ##############################################################################
   # TODO: Given anchor coordinates and the proposed offset for each anchor,    #
@@ -391,7 +391,7 @@ class SingleStageDetector(nn.Module):
     #       (A5-1) for a better performance than with the default value.         #
     ##############################################################################
     # Replace "pass" statement with your code
-    feat = self.feat_extractor(images) # Bx1280x7x7
+    feat = self.feat_extractor(images) # (B, 1280, 7, 7)
     B, _, _, _ = feat.shape
     grid = GenerateGrid(B) # (B, H', W', 2)
     self.anchor_list = self.anchor_list.to(grid.device)
