@@ -127,18 +127,17 @@ class ProposalModule(nn.Module):
     pred_outputs = self.pred_layer(features) # (B, in_dim, H', W') -> (B , 6 * A, H', W')
     B, _, H, W = pred_outputs.shape
     tmp = pred_outputs.view(B, self.num_anchors, -1, H, W) # (B, A, 6, H', W')
+    conf_scores = tmp[:, :, :2, :, :]
+    offsets = tmp[:, :, 2:, :, :]    
     if mode == 'train': 
-      pos_anchors = self._extract_anchor_data(tmp, pos_anchor_idx)
-      neg_anchors = self._extract_anchor_data(tmp, neg_anchor_idx)
+      pos_anchors = self._extract_anchor_data(conf_scores, pos_anchor_idx)
+      neg_anchors = self._extract_anchor_data(conf_scores, neg_anchor_idx)
       # 注意不能用下面这个实现方法, 生成矩阵的维度是(2, 8, 2), 在新的维度堆叠
       # conf_scores = torch.stack([pos_anchors[:, :2], neg_anchors[:, :2]], dim=0)
       # 还可以这么写: conf_scores = torch.cat((pos_anchors[:,:2], neg_anchors[:,:2]), 0)
-      conf_scores = torch.stack([pos_anchors[:, :2], neg_anchors[:, :2]], dim=0).reshape(-1, 2)
-      offsets = pos_anchors[:, 2:]
+      conf_scores = torch.stack([pos_anchors, neg_anchors], dim=0).reshape(-1, 2)
+      offsets = self._extract_anchor_data(offsets, pos_anchor_idx)
       proposals = GenerateProposal(pos_anchor_coord, offsets, 'FasterRCNN')
-    else:
-      conf_scores = tmp[:, :, :2, :, :]
-      offsets = tmp[:, :, 2: , :, :]
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -259,10 +258,10 @@ class RPN(nn.Module):
     anchors = GenerateAnchor(self.anchor_list, grid) # (B, A, H', W', 4)
     iou_mat = IoU(anchors, bboxes) # (B, A*H'*W', N)
     _, anc_per_img, _ = iou_mat.shape
-    pos_anchor_idx, neg_anchor_idx, GT_conf_scores, GT_offsets, GT_class, \
-      activated_anc_coord, _ = ReferenceOnActivatedAnchors(
-        anchors, bboxes, grid, iou_mat, pos_thresh=0.7, neg_thresh=0.2)     
-    conf_scores, offsets, proposals = self.prop_module(features, activated_anc_coord, pos_anchor_idx, neg_anchor_idx)
+    pos_anchor_idx, neg_anchor_idx, _, GT_offsets, GT_class, \
+      pos_anc_coord, _ = ReferenceOnActivatedAnchors(
+        anchors, bboxes, grid, iou_mat, pos_thresh=0.7, neg_thresh=0.2, method='FasterRCNN')     
+    conf_scores, offsets, proposals = self.prop_module(features, pos_anc_coord, pos_anchor_idx, neg_anchor_idx)
     conf_loss = ConfScoreRegression(conf_scores, B) 
     reg_loss = BboxRegression(offsets, GT_offsets, B)
     total_loss = w_conf * conf_loss + w_reg * reg_loss
@@ -320,27 +319,29 @@ class RPN(nn.Module):
     ##############################################################################
     # Replace "pass" statement with your code
     # 这个inference部分可能会比较复杂
-    final_conf_probs, final_proposals = [], []
-    features = self.feat_extractor(images) # B x 1280 x 7 x 7  
-    B, _, _, _ = features.shape
-    grid = GenerateGrid(B) # (B, H', W', 2)
-    self.anchor_list = self.anchor_list.to(grid.device)
-    anchors = GenerateAnchor(self.anchor_list, grid) # (B, A, H', W', 4)
-    conf_scores, offsets = self.prop_module(features) # (B, A, 2, H', W'), (B, A, 4, H', W'), respectively
-    # 这里要理解conf_scores的两列分别代表什么, 我们只要取第一列
-    conf_probs = torch.sigmoid(conf_scores.permute(0, 1, 3, 4, 2)[..., 0])
-    offsets = offsets.permute(0, 1, 3, 4, 2)
-    proposals = GenerateProposal(anchors, offsets, method='FasterRCNN')
-    filtered_indices = torch.nonzero(conf_probs > thresh, as_tuple=False)
-    for b in range(B):
-      filtered_indices_tmp = tuple(filtered_indices[filtered_indices[:, 0] == b].T)
-      filtered_proposals = proposals[filtered_indices_tmp]
-      filtered_conf_probs = conf_probs[filtered_indices_tmp]
-      keep = torchvision.ops.nms(filtered_proposals, filtered_conf_probs, nms_thresh)
-      nms_proposals = filtered_proposals[keep]
-      nms_conf_probs = filtered_conf_probs[keep].reshape(-1, 1)
-      final_proposals.append(nms_proposals.detach())
-      final_conf_probs.append(nms_conf_probs.detach())
+    with torch.no_grad():
+      final_conf_probs, final_proposals = [], []
+      features = self.feat_extractor(images) # B x 1280 x 7 x 7  
+      B, _, _, _ = features.shape
+      grid = GenerateGrid(B) # (B, H', W', 2)
+      self.anchor_list = self.anchor_list.to(grid.device)
+      anchors = GenerateAnchor(self.anchor_list, grid) # (B, A, H', W', 4)
+      conf_scores, offsets = self.prop_module(features) # (B, A, 2, H', W'), (B, A, 4, H', W'), respectively
+      # 这里要理解conf_scores的两列分别代表什么, 我们只要取第一列
+      # RPN实际上是一个简单的二分类问题
+      conf_probs = torch.sigmoid(conf_scores.permute(0, 1, 3, 4, 2)[..., 0])
+      offsets = offsets.permute(0, 1, 3, 4, 2)
+      proposals = GenerateProposal(anchors, offsets, method='FasterRCNN')
+      filtered_indices = torch.nonzero(conf_probs > thresh, as_tuple=False)
+      for b in range(B):
+        filtered_indices_tmp = tuple(filtered_indices[filtered_indices[:, 0] == b].T)
+        filtered_proposals = proposals[filtered_indices_tmp]
+        filtered_conf_probs = conf_probs[filtered_indices_tmp]
+        keep = torchvision.ops.nms(filtered_proposals, filtered_conf_probs, nms_thresh)
+        nms_proposals = filtered_proposals[keep]
+        nms_conf_probs = filtered_conf_probs[keep].reshape(-1, 1)
+        final_proposals.append(nms_proposals)
+        final_conf_probs.append(nms_conf_probs)
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
