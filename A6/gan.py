@@ -32,14 +32,12 @@ def sample_noise(batch_size, noise_dim, dtype=torch.float, device='cpu'):
   # TODO: Implement sample_noise.                                              #
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
-
+  noise = 2 * torch.rand((batch_size, noise_dim), dtype=dtype, device=device) - 1
   ##############################################################################
   #                              END OF YOUR CODE                              #
   ##############################################################################
 
   return noise
-
 
 
 def discriminator():
@@ -51,7 +49,13 @@ def discriminator():
   # TODO: Implement discriminator.                                           #
   ############################################################################
   # Replace "pass" statement with your code
-  pass
+  model = nn.Sequential(
+    nn.Linear(784, 256),
+    nn.LeakyReLU(0.01),
+    nn.Linear(256, 256),
+    nn.LeakyReLU(0.01),
+    nn.Linear(256, 1)
+  )  
   ############################################################################
   #                             END OF YOUR CODE                             #
   ############################################################################
@@ -68,7 +72,14 @@ def generator(noise_dim=NOISE_DIM):
   # TODO: Implement generator.                                               #
   ############################################################################
   # Replace "pass" statement with your code
-  pass
+  model = nn.Sequential(
+    nn.Linear(noise_dim, 1024),
+    nn.ReLU(),
+    nn.Linear(1024, 1024),
+    nn.ReLU(),
+    nn.Linear(1024, 784),
+    nn.Tanh()
+  )
   ############################################################################
   #                             END OF YOUR CODE                             #
   ############################################################################
@@ -91,7 +102,14 @@ def discriminator_loss(logits_real, logits_fake):
   # TODO: Implement discriminator_loss.                                        #
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
+  logits_real = logits_real.view(-1)
+  logits_fake = logits_fake.view(-1)
+  N = logits_real.shape[0]
+  real_labels = torch.ones(N, device=logits_real.device)
+  fake_labels = torch.zeros(N, device=logits_fake.device)
+  fake_loss = torch.nn.functional.binary_cross_entropy_with_logits(logits_fake, fake_labels, reduction='mean')  
+  real_loss = torch.nn.functional.binary_cross_entropy_with_logits(logits_real, real_labels, reduction='mean') 
+  loss = real_loss + fake_loss
   ##############################################################################
   #                              END OF YOUR CODE                              #
   ##############################################################################
@@ -112,7 +130,9 @@ def generator_loss(logits_fake):
   # TODO: Implement generator_loss.                                            #
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
+  logits_fake = logits_fake.view(-1)
+  fake_labels = torch.ones(logits_fake.shape[0], device=logits_fake.device)
+  loss = torch.nn.functional.binary_cross_entropy_with_logits(logits_fake, fake_labels, reduction='mean')
   ##############################################################################
   #                              END OF YOUR CODE                              #
   ##############################################################################
@@ -134,7 +154,7 @@ def get_optimizer(model):
   # TODO: Implement optimizer.                                                 #
   ##############################################################################
   # Replace "pass" statement with your code
-  pass
+  optimizer = optim.Adam(model.parameters(), lr=1e-3, betas=(0.5, 0.999))
   ##############################################################################
   #                              END OF YOUR CODE                              #
   ##############################################################################
