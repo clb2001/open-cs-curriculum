@@ -10,3 +10,6 @@
 */val
 */mAP
 *MNIST_data
+*VOCdevkit
+voc07_train.json
+voc07_val.json
