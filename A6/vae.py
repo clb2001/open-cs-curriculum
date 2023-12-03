@@ -40,7 +40,7 @@ class VAE(nn.Module):
         # 感觉现在有两种代码是比较难实现的
         # 第一种很强调工程，动辄几千行，读起来也比较复杂
         # 第二种比较巧妙或者思路比较复杂，比如一些算法代码、科学计算代码
-        self.hidden_dim = 28
+        self.hidden_dim = 300 # 这里hidden_dim是一个超参数，可以随便选
         self.encoder = nn.Sequential(
             nn.Flatten(), # (N, 1, H, W) -> (N, H * W)
             nn.Linear(self.input_size, self.hidden_dim),
@@ -67,7 +67,7 @@ class VAE(nn.Module):
             nn.ReLU(),
             nn.Linear(self.hidden_dim, self.input_size),
             nn.Sigmoid(),
-            nn.Unflatten(dim=-1, unflattened_size=(1, self.hidden_dim, self.input_size // self.hidden_dim))              
+            nn.Unflatten(dim=-1, unflattened_size=(1, 28, 28))              
         )
         ############################################################################################
         #                                      END OF YOUR CODE                                    #
@@ -127,7 +127,7 @@ class CVAE(nn.Module):
         # to posterior mu and posterior log-variance estimates of the latent space (N, Z)          #
         ############################################################################################
         # Replace "pass" statement with your code
-        self.hidden_dim = 28
+        self.hidden_dim = 300
         self.encoder = nn.Sequential(
             nn.Linear(self.input_size + num_classes, self.hidden_dim),
             nn.ReLU(),
@@ -152,7 +152,7 @@ class CVAE(nn.Module):
             nn.ReLU(),
             nn.Linear(self.hidden_dim, self.input_size),
             nn.Sigmoid(),
-            nn.Unflatten(dim=-1, unflattened_size=(1, self.hidden_dim, self.input_size // self.hidden_dim))              
+            nn.Unflatten(dim=-1, unflattened_size=(1, 28, 28))              
         ) 
         ############################################################################################
         #                                      END OF YOUR CODE                                    #
