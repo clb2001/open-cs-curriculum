@@ -449,3 +449,5 @@ tramp
 *.json
 *.pkl
 *.pt
+*.npy
+*.pickle
