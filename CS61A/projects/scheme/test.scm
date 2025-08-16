@@ -1,0 +1,1 @@
+(begin (define x (+ x 1)) 42 (define y (+ x 1)))
