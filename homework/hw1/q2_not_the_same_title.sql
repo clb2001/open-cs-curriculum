@@ -1,1 +1,0 @@
-select premiered, primary_title || ' (' || original_title || ')' from titles where primary_title <> original_title order by premiered DESC limit 10;
