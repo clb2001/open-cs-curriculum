@@ -1,0 +1,167 @@
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Describe how and why you modified the baseline code.
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################				
+# You can modify this portion				
+	# Loop header			
+	iaddq $-10, %rdx			
+	jle DDD			
+########################################				
+########################################				
+Loop: 				
+	mrmovq (%rdi), %r8 # read val from src...			
+	mrmovq $0x8(%rdi), %r9 # read val from src...			
+	mrmovq $0x10(%rdi), %r10 # read val from src...			
+	mrmovq $0x18(%rdi), %r11 # read val from src...			
+	mrmovq $0x20(%rdi), %r12 # read val from src...			
+	mrmovq $0x28(%rdi), %r13 # read val from src...			
+	mrmovq $0x30(%rdi), %r14 # read val from src...			
+	mrmovq $0x38(%rdi), %rbp # read val from src...			
+	mrmovq $0x40(%rdi), %rbx # read val from src...			
+	mrmovq $0x48(%rdi), %rcx # read val from src...			
+				
+	rmmovq %r8, (%rsi) # ...and store it to dst			
+	rmmovq %r9, $0x8(%rsi) # ...and store it to dst			
+	rmmovq %r10, $0x10(%rsi) # ...and store it to dst			
+	rmmovq %r11, $0x18(%rsi) # ...and store it to dst			
+	rmmovq %r12, $0x20(%rsi) # ...and store it to dst			
+	rmmovq %r13, $0x28(%rsi) # ...and store it to dst			
+	rmmovq %r14, $0x30(%rsi) # ...and store it to dst			
+	rmmovq %rbp, $0x38(%rsi) # ...and store it to dst			
+	rmmovq %rbx, $0x40(%rsi) # ...and store it to dst			
+	rmmovq %rcx, $0x48(%rsi) # ...and store it to dst			
+				
+	# 昨天研究了一个晚上的条件传送，效果不是很好，最高就28分			
+	# 今天上午优化一下可以到43分，我觉得这题优化上48分挺难的			
+	# 再优化一下可以达到48分（后面结尾循环的逻辑要处理好）			
+	andq %r8, %r8			
+	jle A1			
+	iaddq $1, %rax			
+A1:				
+	andq %r9, %r9			
+	jle A2			
+	iaddq $1, %rax			
+A2:				
+	andq %r10, %r10			
+	jle A3			
+	iaddq $1, %rax			
+A3:				
+	andq %r11, %r11			
+	jle A4			
+	iaddq $1, %rax			
+A4:				
+	andq %r12, %r12			
+	jle A5			
+	iaddq $1, %rax			
+A5:				
+	andq %r13, %r13			
+	jle A6			
+	iaddq $1, %rax			
+A6:				
+	andq %r14, %r14			
+	jle A7			
+	iaddq $1, %rax			
+A7:				
+	andq %rbp, %rbp			
+	jle A8			
+	iaddq $1, %rax			
+A8:				
+	andq %rbx, %rbx			
+	jle A9			
+	iaddq $1, %rax			
+A9:				
+	andq %rcx, %rcx			
+	jle A10			
+	iaddq $1, %rax			
+A10:				
+	iaddq $0x50, %rdi			
+	iaddq $0x50, %rsi 			
+	iaddq $-10, %rdx			
+	jg Loop   # if so, continue:			
+#########################################				
+#########################################				
+DDD:				
+	iaddq $8, %rdx     # len <= 2?			
+	jle DD			
+Loop_1: 				
+    mrmovq (%rdi), %r8 # read val from src...				
+	mrmovq $0x8(%rdi), %r9 # read val from src...			
+	mrmovq $0x10(%rdi), %r10 # read val from src...			
+				
+	rmmovq %r8, (%rsi) # ...and store it to dst			
+	rmmovq %r9, $0x8(%rsi) # ...and store it to dst			
+	rmmovq %r10, $0x10(%rsi) # ...and store it to dst			
+				
+	andq %r8, %r8			
+	jle B1			
+	iaddq $1, %rax			
+B1:				
+	andq %r9, %r9			
+	jle B2			
+	iaddq $1, %rax			
+B2:				
+	andq %r10, %r10			
+	jle B3			
+	iaddq $1, %rax			
+B3:				
+	iaddq $0x18, %rdi			
+	iaddq $0x18, %rsi 			
+	iaddq $-3, %rdx			
+	jg Loop_1   # if so, continue:			
+#########################################				
+#########################################				
+DD:				
+	iaddq $1, %rdx						
+	jle D	# if so, goto D:		
+				
+    mrmovq (%rdi), %r13	# read val from src...	
+	mrmovq 8(%rdi), %r14	# read val from src...	
+	rmmovq %r13, (%rsi)	# ...and store it to dst						
+	rmmovq %r14, 8(%rsi)	# ...and store it to dst
+
+	andq %r13, %r13			
+	jle Npos_1			
+	iaddq $1, %rax			
+Npos_1:					
+	andq %r14, %r14			
+	jle Npos_2		
+	iaddq $1, %rax			
+Npos_2:				
+	jmp Done			# if so, goto Done:
+##################################################################				
+##################################################################				
+D:				
+	iaddq $1, %rdx			
+	# 可以试试三阶展开			
+	# 再展开一次就变成54.8分了
+	#再调整一下顺序就是55.1分了
+	# Average CPE = 7.74, 我觉得差不多了
+	mrmovq (%rdi), %r14	# read val from src...		
+	jle Done	# if so, goto Done:				
+	rmmovq %r14, (%rsi)	# ...and store it to dst		
+	andq %r14, %r14			
+	jle Done		
+	iaddq $1, %rax			
+##################################################################				
+##################################################################				
+
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */
